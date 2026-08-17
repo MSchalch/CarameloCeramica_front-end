@@ -1,0 +1,27 @@
+.chatbot-wrapper {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1050;
+}
+
+.chatbot-toggle {
+  width: 60px;
+  height: 60px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.chatbot-toggle:hover {
+  transform: scale(1.1);
+}
+
+.chatbot-card {
+  width: 350px;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chatbot-body {
+  height: 100%;
+}
