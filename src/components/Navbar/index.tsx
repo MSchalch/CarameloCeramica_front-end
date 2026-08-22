@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   return (
@@ -16,10 +16,21 @@ const Navbar = () => {
             <li className="nav-item">
               <Link className="nav-link" to="/">Catálogo</Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/dashboard">Dashboard</Link>
+            
+            {/* ADM Dropdown */}
+            <li className="nav-item dropdown">
+              <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                Admin
+              </a>
+              <ul className="dropdown-menu shadow-sm border-0">
+                <li><Link className="dropdown-item" to="/dashboard">Dashboard</Link></li>
+                <li><Link className="dropdown-item" to="/admin/orders">Gerenciar Pedidos</Link></li>
+                <li><Link className="dropdown-item" to="/admin/customers">Gerenciar Clientes</Link></li>
+                <li><Link className="dropdown-item" to="/product/new">Novo Produto</Link></li>
+              </ul>
             </li>
           </ul>
+
           <ul className="navbar-nav">
             <li className="nav-item">
               <Link className="nav-link" to="/cart">
@@ -28,12 +39,13 @@ const Navbar = () => {
               </Link>
             </li>
             <li className="nav-item ms-3 dropdown">
-              <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                 <i className="bi bi-person-circle fs-5 me-1"></i>
               </a>
               <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li><h6 className="dropdown-header">Cliente</h6></li>
                 <li><Link className="dropdown-item" to="/profile">Meu Perfil</Link></li>
-                <li><Link className="dropdown-item" to="/dashboard">Administração</Link></li>
+                <li><Link className="dropdown-item" to="/profile/orders">Meus Pedidos</Link></li>
                 <li><hr className="dropdown-divider" /></li>
                 <li><Link className="dropdown-item text-danger" to="/login">Sair</Link></li>
               </ul>
