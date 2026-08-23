@@ -11,7 +11,7 @@ interface Product {
 const ProductCard = ({ product }: { product: Product }) => {
   return (
     <div className="card h-100 shadow-sm border-0 product-card">
-      <img src={product.img} className="card-img-top" alt={product.name} style={{ height: '250px', objectFit: 'cover' }} />
+      <img src={product.img} className="card-img-top product-card-img" alt={product.name} />
       <div className="card-body d-flex flex-column">
         <span className="badge bg-light text-dark mb-2 align-self-start">{product.category}</span>
         <h5 className="card-title fw-bold">{product.name}</h5>

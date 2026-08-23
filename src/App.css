@@ -1,4 +1,4 @@
-﻿body {
+body {
   background-color: #f8f9fa;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -98,3 +98,41 @@
 }
 .btn-primary:hover, .btn-info:hover { filter: brightness(0.9); }
 
+/* Modal Overlay compartilhado */
+.custom-modal-overlay {
+  display: block !important;
+  background-color: rgba(0,0,0,0.5) !important;
+}
+
+/* Imagens */
+.product-card-img {
+  height: 250px;
+  object-fit: cover;
+}
+
+.cart-item-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+}
+
+.cart-qty-input {
+  width: 70px;
+}
+
+.chart-container {
+  height: 350px;
+}
+
+.select-status-width {
+  max-width: 220px;
+}
+
+.login-container {
+  min-height: 80vh;
+}
+
+.login-card {
+  max-width: 400px;
+  width: 100%;
+}

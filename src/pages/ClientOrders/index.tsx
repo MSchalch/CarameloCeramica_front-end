@@ -4,7 +4,7 @@ import ClientOrderDetailsModal from '../../components/ClientOrderDetailsModal';
 
 const ClientOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [orders, setOrders] = useState([
+  const [orders] = useState([
     { id: 1004, date: '21/08/2026', total: 180.90, status: 'EM ABERTO' },
     { id: 1003, date: '15/08/2026', total: 250.00, status: 'EM PROCESSAMENTO' },
     { id: 1002, date: '01/08/2026', total: 95.50, status: 'ENTREGUE' },

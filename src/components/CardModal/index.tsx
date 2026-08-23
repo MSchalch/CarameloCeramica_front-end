@@ -27,7 +27,7 @@ const CardModal = ({ show, onClose }: CardModalProps) => {
   };
 
   return (
-    <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex={-1}>
+    <div className="modal fade show custom-modal-overlay" tabIndex={-1}>
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content border-0 shadow">
           <div className="modal-header bg-light border-0">

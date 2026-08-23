@@ -21,7 +21,7 @@ const UserProfile = () => {
     address: ''
   };
 
-  const handleUpdateProfile = (data: CustomerData) => {
+  const handleUpdateProfile = () => {
     alert('Dados atualizados com sucesso (MOCK)!');
   };
 

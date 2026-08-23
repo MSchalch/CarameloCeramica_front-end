@@ -64,7 +64,7 @@ const Dashboard = () => {
         <div className="col-lg-8 mb-4 mb-lg-0">
           <div className="card shadow-sm border-0 h-100">
             <div className="card-header bg-white fw-bold">Evolução de Vendas (Últimos 7 meses)</div>
-            <div className="card-body" style={{ height: '350px' }}>
+            <div className="card-body chart-container">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={salesData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -81,7 +81,7 @@ const Dashboard = () => {
         <div className="col-lg-4">
           <div className="card shadow-sm border-0 h-100">
             <div className="card-header bg-white fw-bold">Vendas por Categoria</div>
-            <div className="card-body" style={{ height: '350px' }}>
+            <div className="card-body chart-container">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={categoryData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />

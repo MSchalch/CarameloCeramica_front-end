@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 
 const Login = () => {
   return (
-    <div className="container d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
-      <div className="card shadow border-0" style={{ maxWidth: '400px', width: '100%' }}>
+    <div className="container d-flex justify-content-center align-items-center login-container">
+      <div className="card shadow border-0 login-card">
         <div className="card-body p-5">
           <div className="text-center mb-4">
             <i className="bi bi-person-circle fs-1 text-warning"></i>

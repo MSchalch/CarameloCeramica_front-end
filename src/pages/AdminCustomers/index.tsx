@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import CustomerProfileModal from '../../components/CustomerProfileModal';
 import CustomerOrdersHistoryModal from '../../components/CustomerOrdersHistoryModal';
 
@@ -22,7 +23,7 @@ const AdminCustomers = () => {
         <h2 className="fw-bold mb-0">Gerenciar Clientes</h2>
         <div className="d-flex gap-2">
           <button className="btn btn-outline-dark" onClick={() => alert('Exportação bem-sucedida! (MOCK)')}><i className="bi bi-download me-2"></i>Exportar</button>
-          <a href="/customer/new" className="btn btn-dark"><i className="bi bi-plus-lg me-2"></i>Novo Cliente</a>
+          <Link to="/customer/new" className="btn btn-dark"><i className="bi bi-plus-lg me-2"></i>Novo Cliente</Link>
         </div>
       </div>
 

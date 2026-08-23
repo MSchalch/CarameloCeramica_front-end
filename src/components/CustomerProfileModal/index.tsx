@@ -27,14 +27,14 @@ const CustomerProfileModal = ({ show, onClose, customer }: CustomerProfileModalP
     address: 'Endereço principal...'
   };
 
-  const handleUpdateProfile = (data: CustomerData) => {
+  const handleUpdateProfile = () => {
     alert('Perfil atualizado pelo admin (MOCK)!');
     onClose();
   };
 
   return (
     <>
-      <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex={-1}>
+      <div className="modal fade show custom-modal-overlay" tabIndex={-1}>
         <div className="modal-dialog modal-dialog-scrollable modal-xl">
           <div className="modal-content border-0 shadow">
             <div className="modal-header bg-light border-0">

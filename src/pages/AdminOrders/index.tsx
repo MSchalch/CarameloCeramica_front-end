@@ -54,10 +54,9 @@ const AdminOrders = () => {
                     <td>R$ {order.total.toFixed(2).replace('.', ',')}</td>
                     <td>
                       <select 
-                        className="form-select form-select-sm shadow-none"
+                        className="form-select form-select-sm shadow-none select-status-width"
                         value={order.status}
                         onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                        style={{ maxWidth: '220px' }}
                       >
                         {statusOptions.map(s => (
                           <option key={s} value={s}>{s}</option>
