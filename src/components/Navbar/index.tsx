@@ -1,11 +1,13 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
       <div className="container">
-        <Link className="navbar-brand fw-bold" to="/">
-          <i className="bi bi-palette-fill text-warning me-2"></i>
+        <Link className="navbar-brand fw-bold d-flex align-items-center" to="/">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" className="text-warning me-2" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 2h8v2H8V2zm1 3h6c0 3 3 4 3 7 0 4-2 6-2 8H8c0-2-2-4-2-8 0-3 3-4 3-7z"/>
+          </svg>
           Caramelo Cerâmicas
         </Link>
         <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
