@@ -41,7 +41,7 @@ const ClientOrders = () => {
                   </div>
 
                   {/* Coluna 3: Ações */}
-                  <div className="col-md-4 d-flex flex-column align-items-stretch align-items-md-end gap-2">
+                  <div className="col-md-4 d-flex justify-content-start justify-content-md-end flex-wrap gap-2 mt-3 mt-md-0">
                     {order.status === 'EM ABERTO' && (
                       <button className="btn btn-danger btn-sm" onClick={() => handleAction(order.id, 'Cancelar Pedido')}>Cancelar Pedido</button>
                     )}
