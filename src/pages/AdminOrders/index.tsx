@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import OrderEditModal from '../../components/OrderEditModal';
 
 const AdminOrders = () => {
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orders, setOrders] = useState([
     { id: 1004, customer: 'João Silva', date: '21/08/2026', total: 180.90, status: 'EM ABERTO' },
     { id: 1003, customer: 'Maria Oliveira', date: '15/08/2026', total: 250.00, status: 'EM PROCESSAMENTO' },
@@ -10,7 +12,11 @@ const AdminOrders = () => {
 
   const handleStatusChange = (orderId: number, newStatus: string) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    alert(`Status do pedido #${orderId} alterado para ${newStatus}`);
+    
+    // Se estiver com o modal aberto e mudou de status por ele, atualizamos a referência
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder((prev: any) => ({ ...prev, status: newStatus }));
+    }
   };
 
   const statusOptions = [
@@ -59,7 +65,11 @@ const AdminOrders = () => {
                       </select>
                     </td>
                     <td className="text-end">
-                      <button className="btn btn-sm btn-outline-dark" title="Ver Detalhes do Pedido">
+                      <button 
+                        className="btn btn-sm btn-outline-dark" 
+                        title="Ver Detalhes do Pedido"
+                        onClick={() => setSelectedOrder(order)}
+                      >
                         <i className="bi bi-eye"></i> Detalhes
                       </button>
                     </td>
@@ -70,6 +80,13 @@ const AdminOrders = () => {
           </div>
         </div>
       </div>
+
+      <OrderEditModal 
+        show={!!selectedOrder} 
+        onClose={() => setSelectedOrder(null)} 
+        order={selectedOrder}
+        onStatusChange={handleStatusChange}
+      />
     </div>
   );
 };
