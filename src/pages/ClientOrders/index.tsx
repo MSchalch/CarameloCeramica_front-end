@@ -40,14 +40,14 @@ const ClientOrders = () => {
         {orders.map(order => (
           <div className="col-12 mb-3" key={order.id}>
             <div className="card shadow-sm border-0">
-              <div className="card-body d-flex flex-column flex-md-row align-items-md-center gap-3">
+              <div className="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                 
                 <div>
                   <h5 className="fw-bold mb-1">Pedido #{order.id}</h5>
                   <p className="text-muted mb-0 small">Realizado em: {order.date} • Total: R$ {order.total.toFixed(2).replace('.', ',')}</p>
                 </div>
                 
-                <div className="ms-auto text-end">
+                <div>
                   <span className={`badge ${getStatusBadge(order.status)} px-3 py-2 fs-6`}>{order.status}</span>
                 </div>
                 
