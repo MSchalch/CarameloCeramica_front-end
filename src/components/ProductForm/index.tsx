@@ -47,6 +47,10 @@ const ProductForm = ({ initialData, onSubmit, isEdit = false }: ProductFormProps
   return (
     <form onSubmit={handleSubmit}>
       <div className="row mb-3">
+        <div className="col-12 mb-3">
+          <label className="form-label">Foto Principal da Peça</label>
+          <input type="file" className="form-control" name="image" accept="image/*" />
+        </div>
         <div className="col-md-8">
           <label className="form-label">Nome da Peça</label>
           <input type="text" className="form-control" name="name" value={formData.name} onChange={handleChange} required />
