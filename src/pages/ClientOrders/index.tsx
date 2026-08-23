@@ -62,7 +62,7 @@ const ClientOrders = () => {
                     <button className="btn btn-warning btn-sm fw-bold" onClick={() => handleAction(order.id, 'Solicitar Troca')}>Solicitar Troca</button>
                   )}
                   {order.status === 'TROCA ACEITA' && (
-                    <button className="btn btn-dark btn-sm fw-bold" onClick={() => handleAction(order.id, 'Informar Despacho')}>Informar Despacho</button>
+                    <button className="btn btn-warning btn-sm fw-bold" onClick={() => handleAction(order.id, 'Informar Despacho')}>Informar Despacho</button>
                   )}
                   
                   <button className="btn btn-secondary btn-sm">Ver Detalhes</button>

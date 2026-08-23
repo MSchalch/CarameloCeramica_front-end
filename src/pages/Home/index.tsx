@@ -6,7 +6,7 @@ const Home = () => {
     { id: 1, name: 'Tigela Rústica', price: 89.90, category: 'Bowls', img: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80' },
     { id: 2, name: 'Vaso Minimalista', price: 145.00, category: 'Vasos', img: 'https://images.unsplash.com/photo-1578500494198-246f612d3b3d?w=500&q=80' },
     { id: 3, name: 'Xícara de Café Expresso', price: 45.50, category: 'Xícaras', img: 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=500&q=80' },
-    { id: 4, name: 'Prato Fundo Cerâmica', price: 65.00, category: 'Pratos', img: 'https://images.unsplash.com/photo-1605342410385-e2a1dfdf3b78?w=500&q=80' },
+    { id: 4, name: 'Prato Fundo Cerâmica', price: 65.00, category: 'Pratos', img: 'https://images.unsplash.com/photo-1584448375837-33109ce4a069?w=500&q=80' },
   ];
 
   return (
