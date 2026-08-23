@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import CustomerProfileModal from '../../components/CustomerProfileModal';
 
 const AdminCustomers = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
   // Mock dados
   const customers = [
@@ -73,7 +75,11 @@ const AdminCustomers = () => {
                       </span>
                     </td>
                     <td className="text-end">
-                      <button className="btn btn-sm btn-outline-dark me-2" title="Ver Detalhes">
+                      <button 
+                        className="btn btn-sm btn-outline-dark me-2" 
+                        title="Ver Detalhes"
+                        onClick={() => setSelectedCustomer(customer)}
+                      >
                         <i className="bi bi-eye"></i>
                       </button>
                       <button className="btn btn-sm btn-outline-warning" title="Histórico de Pedidos">
@@ -92,6 +98,12 @@ const AdminCustomers = () => {
           </div>
         </div>
       </div>
+
+      <CustomerProfileModal 
+        show={!!selectedCustomer} 
+        onClose={() => setSelectedCustomer(null)} 
+        customer={selectedCustomer} 
+      />
     </div>
   );
 };
