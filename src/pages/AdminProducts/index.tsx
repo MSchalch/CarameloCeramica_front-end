@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import ProductEditModal from '../../components/ProductEditModal';
 
 const AdminProducts = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Mock dados
   const products = [
@@ -88,9 +90,13 @@ const AdminProducts = () => {
                       </span>
                     </td>
                     <td className="text-end">
-                      <Link to={`/product/${product.id}/edit`} className="btn btn-sm btn-outline-dark me-2" title="Editar">
+                      <button 
+                        className="btn btn-sm btn-outline-dark me-2" 
+                        title="Editar"
+                        onClick={() => setSelectedProduct(product)}
+                      >
                         <i className="bi bi-pencil"></i>
-                      </Link>
+                      </button>
                       <button className="btn btn-sm btn-outline-danger" title="Inativar/Remover">
                         <i className="bi bi-trash"></i>
                       </button>
@@ -107,6 +113,12 @@ const AdminProducts = () => {
           </div>
         </div>
       </div>
+
+      <ProductEditModal 
+        show={!!selectedProduct} 
+        onClose={() => setSelectedProduct(null)} 
+        product={selectedProduct} 
+      />
     </div>
   );
 };
