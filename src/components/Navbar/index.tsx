@@ -28,6 +28,8 @@ const Navbar = () => {
                 <li><Link className="dropdown-item" to="/dashboard">Dashboard</Link></li>
                 <li><Link className="dropdown-item" to="/admin/orders">Gerenciar Pedidos</Link></li>
                 <li><Link className="dropdown-item" to="/admin/customers">Gerenciar Clientes</Link></li>
+                <li><Link className="dropdown-item" to="/admin/products">Gerenciar Produtos</Link></li>
+                <li><hr className="dropdown-divider" /></li>
                 <li><Link className="dropdown-item" to="/product/new">Novo Produto</Link></li>
               </ul>
             </li>

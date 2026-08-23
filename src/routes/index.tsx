@@ -1,4 +1,4 @@
-﻿import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import Home from '../pages/Home';
 import Cart from '../pages/Cart';
@@ -12,6 +12,7 @@ import ProductEdit from '../pages/ProductEdit';
 import ClientOrders from '../pages/ClientOrders';
 import AdminCustomers from '../pages/AdminCustomers';
 import AdminOrders from '../pages/AdminOrders';
+import AdminProducts from '../pages/AdminProducts';
 
 const AppRoutes = () => {
   return (
@@ -29,8 +30,9 @@ const AppRoutes = () => {
         
         {/* Rotas de Admin */}
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/admin/customers" element={<AdminCustomers />} />
         <Route path="/admin/orders" element={<AdminOrders />} />
+        <Route path="/admin/customers" element={<AdminCustomers />} />
+        <Route path="/admin/products" element={<AdminProducts />} />
         <Route path="/product/new" element={<ProductRegistration />} />
         <Route path="/product/edit/:id" element={<ProductEdit />} />
       </Route>
