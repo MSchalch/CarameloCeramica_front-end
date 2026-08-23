@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import CustomerForm, { type CustomerData } from '../CustomerForm';
+import AddressModal from '../AddressModal';
+import CardModal from '../CardModal';
 
 interface CustomerProfileModalProps {
   show: boolean;
@@ -9,6 +11,8 @@ interface CustomerProfileModalProps {
 
 const CustomerProfileModal = ({ show, onClose, customer }: CustomerProfileModalProps) => {
   const [activeTab, setActiveTab] = useState('dados');
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showCardModal, setShowCardModal] = useState(false);
 
   if (!show || !customer) return null;
 
@@ -75,7 +79,7 @@ const CustomerProfileModal = ({ show, onClose, customer }: CustomerProfileModalP
                   <div>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                       <h5 className="fw-bold">Endereços Cadastrados</h5>
-                      <button className="btn btn-sm btn-dark" onClick={() => alert('Abrir modal de novo endereço (Em desenvolvimento)')}><i className="bi bi-plus-lg me-1"></i>Novo Endereço</button>
+                      <button className="btn btn-sm btn-dark" onClick={() => setShowAddressModal(true)}><i className="bi bi-plus-lg me-1"></i>Novo Endereço</button>
                     </div>
                     <div className="row">
                       <div className="col-md-6 mb-3">
@@ -100,7 +104,7 @@ const CustomerProfileModal = ({ show, onClose, customer }: CustomerProfileModalP
                   <div>
                      <div className="d-flex justify-content-between align-items-center mb-3">
                       <h5 className="fw-bold">Cartões Cadastrados</h5>
-                      <button className="btn btn-sm btn-dark" onClick={() => alert('Abrir modal de novo cartão (Em desenvolvimento)')}><i className="bi bi-plus-lg me-1"></i>Novo Cartão</button>
+                      <button className="btn btn-sm btn-dark" onClick={() => setShowCardModal(true)}><i className="bi bi-plus-lg me-1"></i>Novo Cartão</button>
                     </div>
                     <div className="row">
                       <div className="col-md-6 mb-3">
@@ -124,6 +128,9 @@ const CustomerProfileModal = ({ show, onClose, customer }: CustomerProfileModalP
           </div>
         </div>
       </div>
+      
+      <AddressModal show={showAddressModal} onClose={() => setShowAddressModal(false)} />
+      <CardModal show={showCardModal} onClose={() => setShowCardModal(false)} />
     </>
   );
 };

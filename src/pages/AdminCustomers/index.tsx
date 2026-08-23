@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import CustomerProfileModal from '../../components/CustomerProfileModal';
+import CustomerOrdersHistoryModal from '../../components/CustomerOrdersHistoryModal';
 
 const AdminCustomers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [historyCustomer, setHistoryCustomer] = useState<any>(null);
 
   // Mock dados
   const customers = [
@@ -82,7 +84,11 @@ const AdminCustomers = () => {
                       >
                         <i className="bi bi-eye"></i>
                       </button>
-                      <button className="btn btn-sm btn-outline-warning" title="Histórico de Pedidos" onClick={() => alert('Abrir modal de histórico de pedidos do cliente (Em desenvolvimento)')}>
+                      <button 
+                        className="btn btn-sm btn-outline-warning" 
+                        title="Histórico de Pedidos" 
+                        onClick={() => setHistoryCustomer(customer)}
+                      >
                         <i className="bi bi-box-seam"></i>
                       </button>
                     </td>
@@ -103,6 +109,11 @@ const AdminCustomers = () => {
         show={!!selectedCustomer} 
         onClose={() => setSelectedCustomer(null)} 
         customer={selectedCustomer} 
+      />
+      <CustomerOrdersHistoryModal
+        show={!!historyCustomer}
+        onClose={() => setHistoryCustomer(null)}
+        customer={historyCustomer}
       />
     </div>
   );
