@@ -8,6 +8,7 @@ export interface ProductData {
   category: string;
   material: string;
   dimensions: string;
+  weight: number | '';
   priceGroup: string;
 }
 
@@ -25,6 +26,7 @@ const ProductForm = ({ initialData, onSubmit, isEdit = false }: ProductFormProps
     category: '',
     material: '',
     dimensions: '',
+    weight: '',
     priceGroup: ''
   });
 
@@ -77,15 +79,19 @@ const ProductForm = ({ initialData, onSubmit, isEdit = false }: ProductFormProps
         </div>
       </div>
       <div className="row mb-4">
-        <div className="col-md-4">
+        <div className="col-md-3">
           <label className="form-label">Material (Argila/Esmalte)</label>
           <input type="text" className="form-control" name="material" value={formData.material} onChange={handleChange} required />
         </div>
-        <div className="col-md-4">
-          <label className="form-label">Dimensões / Peso</label>
-          <input type="text" className="form-control" name="dimensions" placeholder="Ex: 20x20cm, 500g" value={formData.dimensions} onChange={handleChange} required />
+        <div className="col-md-3">
+          <label className="form-label">Dimensões (LxAxP)</label>
+          <input type="text" className="form-control" name="dimensions" placeholder="Ex: 20x15x20cm" value={formData.dimensions} onChange={handleChange} required />
         </div>
-        <div className="col-md-4">
+        <div className="col-md-3">
+          <label className="form-label">Peso (gramas)</label>
+          <input type="number" className="form-control" name="weight" placeholder="Ex: 500" value={formData.weight || ''} onChange={handleChange} required />
+        </div>
+        <div className="col-md-3">
           <label className="form-label">Grupo de Precificação</label>
           <select className="form-select" name="priceGroup" value={formData.priceGroup} onChange={handleChange} required>
             <option value="">Selecione...</option>

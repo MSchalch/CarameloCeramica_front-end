@@ -12,7 +12,8 @@ const ProductEdit = () => {
     brand: 'Estúdio Caramelo',
     category: 'Bowls',
     material: 'Argila Vermelha / Esmalte Transparente',
-    dimensions: '15x8cm, 350g',
+    dimensions: '15x8cm',
+    weight: 350,
     priceGroup: 'Premium'
   };
 
