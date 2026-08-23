@@ -65,7 +65,7 @@ const ClientOrders = () => {
                     <button className="btn btn-warning btn-sm fw-bold" onClick={() => handleAction(order.id, 'Informar Despacho')}>Informar Despacho</button>
                   )}
                   
-                  <button className="btn btn-secondary btn-sm">Ver Detalhes</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => alert('Abrir modal de detalhes do pedido (Em desenvolvimento)')}>Ver Detalhes</button>
                 </div>
 
               </div>

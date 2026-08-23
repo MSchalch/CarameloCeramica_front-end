@@ -21,7 +21,7 @@ const AdminProducts = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="fw-bold mb-0">Gerenciar Produtos</h2>
         <div className="d-flex gap-2">
-          <button className="btn btn-outline-dark"><i className="bi bi-download me-2"></i>Exportar</button>
+          <button className="btn btn-outline-dark" onClick={() => alert('Exportação bem-sucedida! (MOCK)')}><i className="bi bi-download me-2"></i>Exportar</button>
           <Link to="/product/new" className="btn btn-dark"><i className="bi bi-plus-lg me-2"></i>Novo Produto</Link>
         </div>
       </div>
@@ -97,7 +97,7 @@ const AdminProducts = () => {
                       >
                         <i className="bi bi-pencil"></i>
                       </button>
-                      <button className="btn btn-sm btn-outline-danger" title="Inativar/Remover">
+                      <button className="btn btn-sm btn-outline-danger" title="Inativar/Remover" onClick={() => alert('Produto inativado com sucesso (MOCK)!')}>
                         <i className="bi bi-trash"></i>
                       </button>
                     </td>

@@ -19,7 +19,7 @@ const AdminCustomers = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="fw-bold mb-0">Gerenciar Clientes</h2>
         <div className="d-flex gap-2">
-          <button className="btn btn-outline-dark"><i className="bi bi-download me-2"></i>Exportar</button>
+          <button className="btn btn-outline-dark" onClick={() => alert('Exportação bem-sucedida! (MOCK)')}><i className="bi bi-download me-2"></i>Exportar</button>
           <a href="/customer/new" className="btn btn-dark"><i className="bi bi-plus-lg me-2"></i>Novo Cliente</a>
         </div>
       </div>
@@ -82,7 +82,7 @@ const AdminCustomers = () => {
                       >
                         <i className="bi bi-eye"></i>
                       </button>
-                      <button className="btn btn-sm btn-outline-warning" title="Histórico de Pedidos">
+                      <button className="btn btn-sm btn-outline-warning" title="Histórico de Pedidos" onClick={() => alert('Abrir modal de histórico de pedidos do cliente (Em desenvolvimento)')}>
                         <i className="bi bi-box-seam"></i>
                       </button>
                     </td>

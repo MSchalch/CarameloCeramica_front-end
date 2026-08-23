@@ -22,7 +22,7 @@ const Dashboard = () => {
     <div className="container py-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="fw-bold">Painel de Análises</h2>
-        <button className="btn btn-outline-dark"><i className="bi bi-download me-2"></i>Exportar Relatório</button>
+        <button className="btn btn-outline-dark" onClick={() => alert('Exportação bem-sucedida! (MOCK)')}><i className="bi bi-download me-2"></i>Exportar Relatório</button>
       </div>
 
       <div className="row mb-4">

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import CustomerForm, { type CustomerData } from '../../components/CustomerForm';
 
 const UserProfile = () => {
@@ -76,7 +76,7 @@ const UserProfile = () => {
                   <div>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                       <h5 className="fw-bold">Meus Endereços</h5>
-                      <button className="btn btn-sm btn-dark"><i className="bi bi-plus-lg me-1"></i>Novo Endereço</button>
+                      <button className="btn btn-sm btn-dark" onClick={() => alert('Abrir modal de novo endereço (Em desenvolvimento)')}><i className="bi bi-plus-lg me-1"></i>Novo Endereço</button>
                     </div>
                     <div className="row">
                       <div className="col-md-6 mb-3">
@@ -101,7 +101,7 @@ const UserProfile = () => {
                   <div>
                      <div className="d-flex justify-content-between align-items-center mb-3">
                       <h5 className="fw-bold">Meus Cartões</h5>
-                      <button className="btn btn-sm btn-dark"><i className="bi bi-plus-lg me-1"></i>Novo Cartão</button>
+                      <button className="btn btn-sm btn-dark" onClick={() => alert('Abrir modal de novo cartão (Em desenvolvimento)')}><i className="bi bi-plus-lg me-1"></i>Novo Cartão</button>
                     </div>
                     <div className="row">
                       <div className="col-md-6 mb-3">
