@@ -16,7 +16,10 @@ const AdminCustomers = () => {
     <div className="container py-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="fw-bold mb-0">Gerenciar Clientes</h2>
-        <button className="btn btn-dark"><i className="bi bi-download me-2"></i>Exportar Relatório</button>
+        <div className="d-flex gap-2">
+          <button className="btn btn-outline-dark"><i className="bi bi-download me-2"></i>Exportar</button>
+          <a href="/customer/new" className="btn btn-dark"><i className="bi bi-plus-lg me-2"></i>Novo Cliente</a>
+        </div>
       </div>
 
       <div className="card shadow-sm border-0">

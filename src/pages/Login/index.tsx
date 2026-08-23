@@ -20,7 +20,7 @@ const Login = () => {
             </div>
             <button type="submit" className="btn btn-dark w-100 fw-bold mb-3">Entrar</button>
             <div className="text-center">
-              <span className="text-muted">Ainda não tem conta? <Link to="/login" className="text-warning text-decoration-none fw-bold">Cadastre-se</Link></span>
+              <span className="text-muted">Ainda não tem conta? <Link to="/customer/new" className="text-warning text-decoration-none fw-bold">Cadastre-se</Link></span>
             </div>
           </form>
         </div>
