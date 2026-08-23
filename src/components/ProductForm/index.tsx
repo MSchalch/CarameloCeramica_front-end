@@ -78,7 +78,7 @@ const ProductForm = ({ initialData, onSubmit, isEdit = false }: ProductFormProps
           </select>
         </div>
       </div>
-      <div className="row mb-4">
+      <div className="row mb-4 align-items-end">
         <div className="col-md-3">
           <label className="form-label">Material (Argila/Esmalte)</label>
           <input type="text" className="form-control" name="material" value={formData.material} onChange={handleChange} required />
