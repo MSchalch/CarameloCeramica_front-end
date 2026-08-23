@@ -1,4 +1,4 @@
-﻿import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const salesData = [
   { name: 'Jan', vendas: 4000 },
@@ -72,7 +72,7 @@ const Dashboard = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="vendas" stroke="#0d6efd" activeDot={{ r: 8 }} name="Vendas (R$)" />
+                  <Line type="monotone" dataKey="vendas" stroke="#426B69" activeDot={{ r: 8 }} name="Vendas (R$)" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -89,7 +89,7 @@ const Dashboard = () => {
                   <YAxis dataKey="name" type="category" />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="qtd" fill="#ffc107" name="Qtd. Vendida" />
+                  <Bar dataKey="qtd" fill="#B08F70" name="Qtd. Vendida" />
                 </BarChart>
               </ResponsiveContainer>
             </div>

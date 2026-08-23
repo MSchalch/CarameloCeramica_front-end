@@ -40,18 +40,18 @@ const ClientOrders = () => {
         {orders.map(order => (
           <div className="col-12 mb-3" key={order.id}>
             <div className="card shadow-sm border-0">
-              <div className="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+              <div className="card-body row align-items-center gy-3 gy-md-0">
                 
-                <div>
+                <div className="col-md-5">
                   <h5 className="fw-bold mb-1">Pedido #{order.id}</h5>
                   <p className="text-muted mb-0 small">Realizado em: {order.date} • Total: R$ {order.total.toFixed(2).replace('.', ',')}</p>
                 </div>
                 
-                <div>
+                <div className="col-md-3 text-md-end text-start">
                   <span className={`badge ${getStatusBadge(order.status)} px-3 py-2 fs-6`}>{order.status}</span>
                 </div>
                 
-                <div className="d-flex gap-2">
+                <div className="col-md-4 d-flex gap-2 justify-content-md-end">
                   {(order.status === 'EM ABERTO' || order.status === 'EM PROCESSAMENTO') && (
                     <button className="btn btn-danger btn-sm" onClick={() => handleAction(order.id, 'Cancelar Pedido')}>Cancelar Pedido</button>
                   )}

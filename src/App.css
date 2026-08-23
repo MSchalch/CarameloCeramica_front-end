@@ -18,6 +18,7 @@
   --caramelo-secondary: #B08F70; /* Camel */
   
   --caramelo-details: #426B69; /* Pine Blue */
+  --caramelo-dark: #6E3028; /* Bitter Chocolate */
   
   /* Botoes */
   --btn-success: #4B7347; /* Fern */
@@ -25,38 +26,39 @@
   --btn-warning: #EAC767; /* Jasmine */
 }
 
-/* Sobrescrevendo o Tema Amarelo do Bootstrap (warning) para as cores principais da loja */
-.bg-warning {
-  background-color: var(--caramelo-secondary) !important;
-  color: white !important;
-}
-.text-warning {
-  color: var(--caramelo-secondary) !important;
-}
-.border-warning {
-  border-color: var(--caramelo-secondary) !important;
-}
-.text-warning-emphasis {
-  color: var(--caramelo-secondary) !important;
-}
-.btn-outline-warning {
-  color: var(--caramelo-secondary) !important;
-  border-color: var(--caramelo-secondary) !important;
-}
-.btn-outline-warning:hover {
-  background-color: var(--caramelo-secondary) !important;
-  color: white !important;
-}
+/* Backgrounds e Texts genéricos */
+.bg-warning { background-color: var(--caramelo-secondary) !important; color: white !important; }
+.text-warning { color: var(--caramelo-secondary) !important; }
+.border-warning { border-color: var(--caramelo-secondary) !important; }
 
-/* Modificadores especificos de botoes da loja (verde, vermelho, amarelo e azul para detalhes) */
+.bg-primary { background-color: var(--caramelo-details) !important; color: white !important; }
+.text-primary { color: var(--caramelo-details) !important; }
+
+.bg-info { background-color: var(--caramelo-details) !important; color: white !important; }
+.text-info { color: var(--caramelo-details) !important; }
+
+.bg-success { background-color: var(--btn-success) !important; color: white !important; }
+.text-success { color: var(--btn-success) !important; }
+
+.bg-danger { background-color: var(--btn-danger) !important; color: white !important; }
+.text-danger { color: var(--btn-danger) !important; }
+
+.bg-dark { background-color: #212529 !important; }
+
+/* Botões */
 .btn-warning {
   background-color: var(--btn-warning) !important;
   border-color: var(--btn-warning) !important;
   color: #333 !important;
 }
-.btn-warning:hover {
+.btn-warning:hover { filter: brightness(0.9); }
+.btn-outline-warning {
+  color: var(--btn-warning) !important;
+  border-color: var(--btn-warning) !important;
+}
+.btn-outline-warning:hover {
   background-color: var(--btn-warning) !important;
-  filter: brightness(0.9);
+  color: #333 !important;
 }
 
 .btn-success {
@@ -64,9 +66,14 @@
   border-color: var(--btn-success) !important;
   color: white !important;
 }
-.btn-success:hover {
+.btn-success:hover { filter: brightness(0.9); }
+.btn-outline-success {
+  color: var(--btn-success) !important;
+  border-color: var(--btn-success) !important;
+}
+.btn-outline-success:hover {
   background-color: var(--btn-success) !important;
-  filter: brightness(0.9);
+  color: white !important;
 }
 
 .btn-danger {
@@ -74,25 +81,20 @@
   border-color: var(--btn-danger) !important;
   color: white !important;
 }
-.btn-danger:hover {
+.btn-danger:hover { filter: brightness(0.9); }
+.btn-outline-danger {
+  color: var(--btn-danger) !important;
+  border-color: var(--btn-danger) !important;
+}
+.btn-outline-danger:hover {
   background-color: var(--btn-danger) !important;
-  filter: brightness(0.9);
+  color: white !important;
 }
 
-.btn-info {
+.btn-primary, .btn-info {
   background-color: var(--caramelo-details) !important;
   border-color: var(--caramelo-details) !important;
   color: white !important;
 }
-.btn-info:hover {
-  background-color: var(--caramelo-details) !important;
-  filter: brightness(0.9);
-}
-.bg-info {
-  background-color: var(--caramelo-details) !important;
-  color: white !important;
-}
-.text-info {
-  color: var(--caramelo-details) !important;
-}
+.btn-primary:hover, .btn-info:hover { filter: brightness(0.9); }
 
