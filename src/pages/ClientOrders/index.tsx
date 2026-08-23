@@ -18,14 +18,7 @@ const ClientOrders = () => {
   return (
     <div className="container py-5">
       <div className="row">
-        <div className="col-md-3 mb-4">
-          <div className="list-group shadow-sm">
-            <Link to="/profile" className="list-group-item list-group-item-action">Meus Dados</Link>
-            <Link to="/profile/orders" className="list-group-item list-group-item-action active bg-dark border-dark">Meus Pedidos</Link>
-          </div>
-        </div>
-
-        <div className="col-md-9">
+        <div className="col-lg-10 offset-lg-1">
           <h3 className="fw-bold mb-4">Histórico de Pedidos</h3>
 
           {orders.map(order => (
