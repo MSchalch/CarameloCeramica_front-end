@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { chatService } from '../../services/chatService';
+import { customerService } from '../../services/customerService';
 import type { ChatMensagem, PecaRecomendada } from '../../types/chat';
 import './ChatbotCard.css';
 
-const SUGESTOES_RAPIDAS = [
+const SUGESTOES_PADRAO = [
+  '✨ O que combina com o que já comprei?',
   '☕ Peças para café da manhã',
   '🍲 Bowls para sopas e caldos',
   '🎁 Ideias de presentes',
@@ -16,17 +18,29 @@ const ChatbotCard: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [mensagemInput, setMensagemInput] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const [clienteId, setClienteId] = useState<number | undefined>(undefined);
   const [mensagens, setMensagens] = useState<ChatMensagem[]>([
     {
       id: '1',
       remetente: 'bot',
-      texto: 'Olá! Sou o Caramelo Bot, o consultor inteligente da Caramelo Cerâmicas. 🏺✨\n\nEstou aqui para ajudar você a encontrar a peça artesanal ideal para o seu dia a dia, mesa posta ou presentes. O que você gostaria de explorar hoje?',
+      texto: 'Olá! Sou o Caramelo Bot, o consultor inteligente da Caramelo Cerâmicas. 🏺✨\n\nEstou conectado ao seu histórico de compras e catálogo para recomendar peças exclusivas que combinam perfeitamente com seu estilo. Como posso ajudar hoje?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Buscar cliente ativo no sistema para enviar seu ID à IA
+  useEffect(() => {
+    customerService.listarClientes('', 0, 1)
+      .then((res) => {
+        if (res.content && res.content.length > 0 && res.content[0].id) {
+          setClienteId(res.content[0].id);
+        }
+      })
+      .catch((err) => console.error('Erro ao identificar cliente para chat IA:', err));
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -63,6 +77,7 @@ const ChatbotCard: React.FC = () => {
 
       const resposta = await chatService.enviarMensagem({
         mensagem: texto,
+        clienteId: clienteId,
         historico: historicoDTO,
       });
 
@@ -136,7 +151,6 @@ const ChatbotCard: React.FC = () => {
     // Formata quebras de linha e negrito básico **texto**
     const partes = texto.split('\n');
     return partes.map((linha, idx) => {
-      // Regex para negrito **palavra**
       const formatado = linha.split(/(\*\*[^*]+\*\*)/g).map((chunk, cIdx) => {
         if (chunk.startsWith('**') && chunk.endsWith('**')) {
           return <strong key={cIdx}>{chunk.slice(2, -2)}</strong>;
@@ -176,7 +190,7 @@ const ChatbotCard: React.FC = () => {
               <div>
                 <h6 className="mb-0 fw-bold text-white">Caramelo Bot</h6>
                 <small className="d-flex align-items-center gap-1" style={{ fontSize: '0.72rem', color: '#e0f2f1' }}>
-                  <span className="status-dot"></span> Recomendações com IA
+                  <span className="status-dot"></span> IA Ativa • Personalização com Histórico
                 </small>
               </div>
             </div>
@@ -284,7 +298,7 @@ const ChatbotCard: React.FC = () => {
 
           {/* Sugestões Rápidas */}
           <div className="bg-light px-3 py-2 border-top d-flex gap-1 overflow-auto" style={{ scrollbarWidth: 'none' }}>
-            {SUGESTOES_RAPIDAS.map((sugestao, i) => (
+            {SUGESTOES_PADRAO.map((sugestao, i) => (
               <button
                 key={i}
                 type="button"

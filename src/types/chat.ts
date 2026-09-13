@@ -19,6 +19,7 @@ export interface ChatMensagem {
 
 export interface ChatRequisicao {
   mensagem: string;
+  clienteId?: number;
   historico: Array<{ remetente: string; texto: string }>;
 }
 
