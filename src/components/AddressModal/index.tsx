@@ -1,5 +1,6 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import type { Endereco } from '../../types/customer';
+import { viaCepService } from '../../services/viaCepService';
 
 interface AddressModalProps {
   show: boolean;
@@ -22,11 +23,46 @@ const AddressModal = ({ show, onClose, onSave }: AddressModalProps) => {
     tipoEndereco: 'AMBOS',
   });
 
+  const [buscandoCep, setBuscandoCep] = useState<boolean>(false);
+  const [mensagemCep, setMensagemCep] = useState<string | null>(null);
+
   if (!show) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valorOriginal = e.target.value;
+    const cepFormatado = viaCepService.formatarCep(valorOriginal);
+
+    setFormData(prev => ({ ...prev, cep: cepFormatado }));
+    setMensagemCep(null);
+
+    const cepLimpo = valorOriginal.replace(/\D/g, '');
+    if (cepLimpo.length === 8) {
+      setBuscandoCep(true);
+      try {
+        const dados = await viaCepService.buscarEnderecoPorCep(cepLimpo);
+        if (dados) {
+          setFormData(prev => ({
+            ...prev,
+            logradouro: dados.logradouro || prev.logradouro,
+            bairro: dados.bairro || prev.bairro,
+            cidade: dados.localidade || prev.cidade,
+            estado: dados.uf || prev.estado,
+          }));
+          setMensagemCep('Endereço localizado com sucesso!');
+        } else {
+          setMensagemCep('CEP não encontrado. Preencha os campos manualmente.');
+        }
+      } catch (err) {
+        setMensagemCep('Erro ao buscar CEP. Preencha manualmente.');
+      } finally {
+        setBuscandoCep(false);
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -77,16 +113,28 @@ const AddressModal = ({ show, onClose, onSave }: AddressModalProps) => {
 
               <div className="row mb-3">
                 <div className="col-md-6">
-                  <label className="form-label">CEP *</label>
+                  <label className="form-label d-flex justify-content-between">
+                    <span>CEP *</span>
+                    {buscandoCep && (
+                      <span className="spinner-border spinner-border-sm text-primary" role="status"></span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     className="form-control"
                     name="cep"
                     placeholder="00000-000"
+                    maxLength={9}
                     value={formData.cep}
-                    onChange={handleChange}
+                    onChange={handleCepChange}
                     required
                   />
+                  {mensagemCep && (
+                    <small className={`d-block mt-1 ${mensagemCep.includes('sucesso') ? 'text-success' : 'text-warning'}`}>
+                      <i className={`bi ${mensagemCep.includes('sucesso') ? 'bi-check-circle' : 'bi-info-circle'} me-1`}></i>
+                      {mensagemCep}
+                    </small>
+                  )}
                 </div>
                 <div className="col-md-6">
                   <label className="form-label">Finalidade *</label>
@@ -106,7 +154,7 @@ const AddressModal = ({ show, onClose, onSave }: AddressModalProps) => {
 
               <div className="row mb-3">
                 <div className="col-md-8">
-                  <label className="form-label">Logradouro *</label>
+                  <label className="form-label">Logradouro / Rua *</label>
                   <input
                     type="text"
                     className="form-control"

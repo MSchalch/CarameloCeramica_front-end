@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Cliente, Endereco, CartaoCredito } from '../../types/customer';
+import { viaCepService } from '../../services/viaCepService';
 
 interface CustomerFormProps {
   initialData?: Cliente;
@@ -36,6 +37,9 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
     tipoEndereco: 'AMBOS',
   });
 
+  const [buscandoCep, setBuscandoCep] = useState<boolean>(false);
+  const [mensagemCep, setMensagemCep] = useState<string | null>(null);
+
   // Estado para cartão inicial opcional
   const [incluirCartao, setIncluirCartao] = useState(false);
   const [cartaoInicial, setCartaoInicial] = useState<CartaoCredito>({
@@ -63,6 +67,38 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
   const handleEnderecoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setEnderecoInicial(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEnderecoCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valorOriginal = e.target.value;
+    const cepFormatado = viaCepService.formatarCep(valorOriginal);
+
+    setEnderecoInicial(prev => ({ ...prev, cep: cepFormatado }));
+    setMensagemCep(null);
+
+    const cepLimpo = valorOriginal.replace(/\D/g, '');
+    if (cepLimpo.length === 8) {
+      setBuscandoCep(true);
+      try {
+        const dados = await viaCepService.buscarEnderecoPorCep(cepLimpo);
+        if (dados) {
+          setEnderecoInicial(prev => ({
+            ...prev,
+            logradouro: dados.logradouro || prev.logradouro,
+            bairro: dados.bairro || prev.bairro,
+            cidade: dados.localidade || prev.cidade,
+            estado: dados.uf || prev.estado,
+          }));
+          setMensagemCep('Endereço preenchido via CEP com sucesso!');
+        } else {
+          setMensagemCep('CEP não encontrado. Preencha manualmente.');
+        }
+      } catch (err) {
+        setMensagemCep('Erro ao consultar ViaCEP.');
+      } finally {
+        setBuscandoCep(false);
+      }
+    }
   };
 
   const handleCartaoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -216,16 +252,28 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
               </select>
             </div>
             <div className="col-md-4">
-              <label className="form-label">CEP *</label>
+              <label className="form-label d-flex justify-content-between">
+                <span>CEP *</span>
+                {buscandoCep && (
+                  <span className="spinner-border spinner-border-sm text-primary" role="status"></span>
+                )}
+              </label>
               <input
                 type="text"
                 className="form-control"
                 name="cep"
                 placeholder="00000-000"
+                maxLength={9}
                 value={enderecoInicial.cep}
-                onChange={handleEnderecoChange}
+                onChange={handleEnderecoCepChange}
                 required
               />
+              {mensagemCep && (
+                <small className={`d-block mt-1 ${mensagemCep.includes('sucesso') ? 'text-success' : 'text-warning'}`}>
+                  <i className={`bi ${mensagemCep.includes('sucesso') ? 'bi-check-circle' : 'bi-info-circle'} me-1`}></i>
+                  {mensagemCep}
+                </small>
+              )}
             </div>
           </div>
 
