@@ -1,13 +1,31 @@
+import { useState, useEffect } from 'react';
 import ProductCard from '../../components/ProductCard';
+import { productService } from '../../services/productService';
+import type { Peca } from '../../types/product';
 
 const Home = () => {
-  // Mocks para o protótipo
-  const mockProducts = [
-    { id: 1, name: 'Tigela Rústica', price: 89.90, category: 'Bowls', img: 'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80' },
-    { id: 2, name: 'Vaso Minimalista', price: 145.00, category: 'Vasos', img: 'https://images.unsplash.com/photo-1578500494198-246f612d3b3d?w=500&q=80' },
-    { id: 3, name: 'Xícara de Café Expresso', price: 45.50, category: 'Xícaras', img: 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=500&q=80' },
-    { id: 4, name: 'Prato Fundo Cerâmica', price: 65.00, category: 'Pratos', img: 'https://images.unsplash.com/photo-1705948731485-6e4c6c180d0d?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-  ];
+  const [products, setProducts] = useState<Peca[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCatalog = async () => {
+      setLoading(true);
+      try {
+        const cat = selectedCategory === 'all' ? '' : selectedCategory;
+        const data = await productService.listarPecas('', cat, 0, 40);
+        // Exibir apenas produtos ativos na vitrine
+        const ativos = (data.content || []).filter(p => p.ativo);
+        setProducts(ativos);
+      } catch (err) {
+        console.error('Erro ao carregar catálogo da Home:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCatalog();
+  }, [selectedCategory]);
 
   return (
     <div className="container py-5">
@@ -15,24 +33,52 @@ const Home = () => {
         <h1 className="display-4 fw-bold text-dark">Bem-vindo à Caramelo Cerâmicas</h1>
         <p className="lead text-muted">Encontre peças artesanais exclusivas que darão vida e personalidade ao seu lar.</p>
       </div>
-      
+
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3 className="fw-bold">Nosso Catálogo</h3>
-        <select className="form-select w-auto">
+        <h3 className="fw-bold mb-0">Nosso Catálogo</h3>
+        <select
+          className="form-select w-auto"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
           <option value="all">Todas as Categorias</option>
-          <option value="bowls">Bowls</option>
-          <option value="pratos">Pratos</option>
-          <option value="xicaras">Xícaras</option>
+          <option value="Bowls">Bowls</option>
+          <option value="Pratos">Pratos</option>
+          <option value="Xícaras">Xícaras</option>
+          <option value="Vasos">Vasos</option>
+          <option value="Travessas">Travessas</option>
         </select>
       </div>
 
-      <div className="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-        {mockProducts.map((product) => (
-          <div className="col" key={product.id}>
-            <ProductCard product={product} />
-          </div>
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-5">
+          <div className="spinner-border text-warning" role="status"></div>
+          <p className="text-muted mt-2">Carregando catálogo artesanal...</p>
+        </div>
+      ) : products.length > 0 ? (
+        <div className="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+          {products.map((product) => (
+            <div className="col" key={product.id}>
+              <ProductCard
+                product={{
+                  id: product.id!,
+                  name: product.nome,
+                  price: Number(product.valorVenda || 0),
+                  category: product.categoria,
+                  img:
+                    product.imagemUrl ||
+                    'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-5 text-muted">
+          <i className="bi bi-box2 fs-1 d-block mb-2 text-secondary"></i>
+          Nenhuma peça encontrada para esta categoria no momento.
+        </div>
+      )}
     </div>
   );
 };

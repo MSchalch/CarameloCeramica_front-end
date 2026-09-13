@@ -1,53 +1,126 @@
-import ProductForm, { type ProductData } from '../ProductForm';
+import { useState, useEffect } from 'react';
+import ProductForm from '../ProductForm';
+import { productService } from '../../services/productService';
+import type { Peca } from '../../types/product';
 
 interface ProductEditModalProps {
   show: boolean;
   onClose: () => void;
-  product: any;
+  product: Peca | null;
 }
 
 const ProductEditModal = ({ show, onClose, product }: ProductEditModalProps) => {
-  if (!show || !product) return null;
+  const [currentProduct, setCurrentProduct] = useState<Peca | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
-  // Mock data mapping
-  const mockProduct: ProductData = {
-    id: product.id,
-    sku: product.sku,
-    name: product.name,
-    brand: 'Estúdio Caramelo', // mock
-    category: product.category,
-    material: 'Argila Vermelha / Esmalte Transparente', // mock
-    dimensions: '15x8cm', // mock
-    weight: 350, // mock
-    priceGroup: 'Premium' // mock
+  useEffect(() => {
+    if (product?.id) {
+      loadFullProduct(product.id);
+    } else {
+      setCurrentProduct(null);
+    }
+  }, [product]);
+
+  const loadFullProduct = async (id: number) => {
+    try {
+      const data = await productService.buscarPorId(id);
+      setCurrentProduct(data);
+    } catch (err: any) {
+      console.error('Erro ao buscar dados da peça:', err);
+      setCurrentProduct(product);
+    }
   };
 
-  const handleUpdateProduct = () => {
-    alert('Peça atualizada com sucesso pelo Admin (MOCK)!');
-    onClose();
+  if (!show || !product) return null;
+
+  const handleUpdateProduct = async (dadosAtualizados: Peca) => {
+    if (!currentProduct) return;
+    setLoading(true);
+    setFeedback(null);
+
+    const payload: Peca = {
+      ...currentProduct,
+      ...dadosAtualizados,
+      id: currentProduct.id,
+    };
+
+    try {
+      const msg = await productService.atualizarPeca(payload);
+      setFeedback({ type: 'success', text: msg || 'Peça atualizada com sucesso!' });
+      setTimeout(() => {
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      const msg = err.response?.data || err.message || 'Erro ao atualizar peça.';
+      setFeedback({ type: 'danger', text: typeof msg === 'string' ? msg : JSON.stringify(msg) });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    if (!currentProduct) return;
+    const novoStatus = !currentProduct.ativo;
+    try {
+      await productService.atualizarPeca({
+        ...currentProduct,
+        ativo: novoStatus,
+        motivoInativacao: !novoStatus ? 'Inativação via painel rápido' : undefined,
+        categoriaInativacao: !novoStatus ? 'GERENCIAL' : undefined,
+      });
+      setFeedback({
+        type: 'success',
+        text: `Peça ${novoStatus ? 'reativada' : 'inativada'} com sucesso!`,
+      });
+      await loadFullProduct(currentProduct.id!);
+    } catch (err: any) {
+      alert('Erro ao alterar status: ' + (err.response?.data || err.message));
+    }
   };
 
   return (
-    <div className="modal fade show custom-modal-overlay" tabIndex={-1}>
+    <div className="modal fade show custom-modal-overlay d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
       <div className="modal-dialog modal-dialog-scrollable modal-lg">
         <div className="modal-content border-0 shadow">
           <div className="modal-header bg-light border-0">
             <h5 className="modal-title fw-bold d-flex align-items-center">
               <i className="bi bi-box-seam fs-4 text-warning me-2"></i>
-              Editar Peça: {product.name}
+              Editar Peça: {currentProduct?.nome || product.nome}
             </h5>
             <button type="button" className="btn-close" onClick={onClose}></button>
           </div>
           <div className="modal-body p-4">
-            <ProductForm initialData={mockProduct} onSubmit={handleUpdateProduct} isEdit={true} />
+            {feedback && (
+              <div className={`alert alert-${feedback.type} alert-dismissible fade show`} role="alert">
+                {feedback.text}
+                <button type="button" className="btn-close" onClick={() => setFeedback(null)}></button>
+              </div>
+            )}
+
+            {currentProduct && (
+              <ProductForm
+                initialData={currentProduct}
+                onSubmit={handleUpdateProduct}
+                isEdit={true}
+                loading={loading}
+              />
+            )}
+
             <hr className="my-4" />
             <div className="d-flex justify-content-between align-items-center bg-light p-3 rounded border">
               <div>
-                <h6 className="text-danger mb-1 fw-bold">Status do Produto no Catálogo</h6>
-                <p className="text-muted mb-0 small">Controla se o produto fica visível e disponível para compra na loja.</p>
+                <h6 className="text-danger mb-1 fw-bold">Status da Peça no Catálogo</h6>
+                <p className="text-muted mb-0 small">
+                  Situação atual: <strong>{currentProduct?.ativo ? 'Ativo' : 'Inativo'}</strong>
+                </p>
               </div>
-              <button className="btn btn-outline-danger fw-bold">
-                <i className="bi bi-power me-2"></i>{product.status === 'Ativo' ? 'Inativar' : 'Reativar'} Produto
+              <button
+                className={`btn ${currentProduct?.ativo ? 'btn-outline-danger' : 'btn-outline-success'} fw-bold`}
+                onClick={handleToggleStatus}
+              >
+                <i className={`bi ${currentProduct?.ativo ? 'bi-power' : 'bi-check-circle'} me-2`}></i>
+                {currentProduct?.ativo ? 'Inativar Peça' : 'Reativar Peça'}
               </button>
             </div>
           </div>
