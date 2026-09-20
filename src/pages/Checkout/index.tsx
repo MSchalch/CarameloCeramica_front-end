@@ -4,6 +4,7 @@ import { customerService } from '../../services/customerService';
 import { orderService } from '../../services/orderService';
 import type { Cliente, CartaoCredito } from '../../types/customer';
 import type { Pedido, ItemPedido, PagamentoPedido, Cupom } from '../../types/order';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface CartItem {
   id: number;
@@ -25,6 +26,7 @@ interface CartaoPagamentoForm {
 }
 
 const Checkout = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState<CartItem[]>([]);
   const [currentCustomer, setCurrentCustomer] = useState<Cliente | null>(null);
@@ -55,29 +57,43 @@ const Checkout = () => {
     }
 
     // Carregar cliente ativo para endereço e cartões
-    customerService.listarClientes('', 0, 1).then((data) => {
-      if (data.content && data.content.length > 0) {
-        customerService.buscarPorId(data.content[0].id!).then((c) => {
-          setCurrentCustomer(c);
-          if (c.enderecos && c.enderecos.length > 0) {
-            setSelectedAddressId(c.enderecos[0].id!);
+    const carregarCliente = async () => {
+      try {
+        let clienteEncontrado: Cliente | null = null;
+        if (user?.clienteId) {
+          clienteEncontrado = await customerService.buscarPorId(user.clienteId);
+        } else {
+          const data = await customerService.listarClientes('', 0, 1);
+          if (data.content && data.content.length > 0) {
+            clienteEncontrado = await customerService.buscarPorId(data.content[0].id!);
           }
-          if (c.cartoes && c.cartoes.length > 0) {
+        }
+
+        if (clienteEncontrado) {
+          setCurrentCustomer(clienteEncontrado);
+          if (clienteEncontrado.enderecos && clienteEncontrado.enderecos.length > 0) {
+            setSelectedAddressId(clienteEncontrado.enderecos[0].id!);
+          }
+          if (clienteEncontrado.cartoes && clienteEncontrado.cartoes.length > 0) {
             setCards([
               {
-                cartaoId: c.cartoes[0].id,
-                numero: c.cartoes[0].numero,
-                nomeImpresso: c.cartoes[0].nomeImpresso,
-                bandeira: c.cartoes[0].bandeira,
-                codigoSeguranca: c.cartoes[0].codigoSeguranca,
+                cartaoId: clienteEncontrado.cartoes[0].id,
+                numero: clienteEncontrado.cartoes[0].numero,
+                nomeImpresso: clienteEncontrado.cartoes[0].nomeImpresso,
+                bandeira: clienteEncontrado.cartoes[0].bandeira,
+                codigoSeguranca: clienteEncontrado.cartoes[0].codigoSeguranca,
                 valor: 0,
               },
             ]);
           }
-        });
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados do cliente no checkout:', err);
       }
-    });
-  }, []);
+    };
+
+    carregarCliente();
+  }, [user]);
 
   const subtotal = items.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
   const frete = items.length > 0 ? 25.00 : 0.00;

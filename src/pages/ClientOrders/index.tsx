@@ -4,8 +4,10 @@ import ClientOrderDetailsModal from '../../components/ClientOrderDetailsModal';
 import { orderService } from '../../services/orderService';
 import { customerService } from '../../services/customerService';
 import type { Pedido } from '../../types/order';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ClientOrders = () => {
+  const { user } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
   const [orders, setOrders] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
@@ -13,11 +15,16 @@ const ClientOrders = () => {
   const fetchClientOrders = async () => {
     setLoading(true);
     try {
-      const customersData = await customerService.listarClientes('', 0, 1);
-      if (customersData.content && customersData.content.length > 0) {
-        const clienteId = customersData.content[0].id!;
-        const pedidosData = await orderService.listarPedidos(clienteId);
+      if (user?.clienteId) {
+        const pedidosData = await orderService.listarPedidos(user.clienteId);
         setOrders(pedidosData.content || []);
+      } else {
+        const customersData = await customerService.listarClientes('', 0, 1);
+        if (customersData.content && customersData.content.length > 0) {
+          const clienteId = customersData.content[0].id!;
+          const pedidosData = await orderService.listarPedidos(clienteId);
+          setOrders(pedidosData.content || []);
+        }
       }
     } catch (err) {
       console.error('Erro ao buscar pedidos do cliente:', err);

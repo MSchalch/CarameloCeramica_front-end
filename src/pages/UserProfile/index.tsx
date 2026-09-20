@@ -5,8 +5,10 @@ import AddressModal from '../../components/AddressModal';
 import CardModal from '../../components/CardModal';
 import { customerService } from '../../services/customerService';
 import type { Cliente, Endereco, CartaoCredito } from '../../types/customer';
+import { useAuth } from '../../contexts/AuthContext';
 
 const UserProfile = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dados');
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
@@ -14,14 +16,19 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
-  // Carregar cliente (busca o primeiro cliente cadastrado ou selecionado)
+  // Carregar cliente do usuário logado ou fallback
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const data = await customerService.listarClientes('', 0, 1);
-      if (data.content && data.content.length > 0) {
-        const fullCustomer = await customerService.buscarPorId(data.content[0].id!);
+      if (user?.clienteId) {
+        const fullCustomer = await customerService.buscarPorId(user.clienteId);
         setCurrentCustomer(fullCustomer);
+      } else {
+        const data = await customerService.listarClientes('', 0, 1);
+        if (data.content && data.content.length > 0) {
+          const fullCustomer = await customerService.buscarPorId(data.content[0].id!);
+          setCurrentCustomer(fullCustomer);
+        }
       }
     } catch (err: any) {
       console.error('Erro ao buscar perfil do cliente:', err);

@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { chatService } from '../../services/chatService';
 import { customerService } from '../../services/customerService';
 import type { ChatMensagem, PecaRecomendada } from '../../types/chat';
+import { useAuth } from '../../contexts/AuthContext';
 import './ChatbotCard.css';
 
 const SUGESTOES_PADRAO = [
@@ -15,6 +16,7 @@ const SUGESTOES_PADRAO = [
 ];
 
 const ChatbotCard: React.FC = () => {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [mensagemInput, setMensagemInput] = useState('');
   const [carregando, setCarregando] = useState(false);
@@ -31,16 +33,20 @@ const ChatbotCard: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Buscar cliente ativo no sistema para enviar seu ID à IA
+  // Buscar cliente ativo no sistema para enviar seu ID à IA (priorizando o usuário autenticado)
   useEffect(() => {
-    customerService.listarClientes('', 0, 1)
-      .then((res) => {
-        if (res.content && res.content.length > 0 && res.content[0].id) {
-          setClienteId(res.content[0].id);
-        }
-      })
-      .catch((err) => console.error('Erro ao identificar cliente para chat IA:', err));
-  }, []);
+    if (user?.clienteId) {
+      setClienteId(user.clienteId);
+    } else {
+      customerService.listarClientes('', 0, 1)
+        .then((res) => {
+          if (res.content && res.content.length > 0 && res.content[0].id) {
+            setClienteId(res.content[0].id);
+          }
+        })
+        .catch((err) => console.error('Erro ao identificar cliente para chat IA:', err));
+    }
+  }, [user]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
