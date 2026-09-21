@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Cliente, Endereco, CartaoCredito } from '../../types/customer';
 import { viaCepService } from '../../services/viaCepService';
-import { formatarCpf, validarCpf, formatarTelefone } from '../../utils/formatters';
+import { formatarCpf, validarCpf, formatarTelefone, validarTelefone, validarEmail } from '../../utils/formatters';
 
 interface CustomerFormProps {
   initialData?: Cliente;
@@ -24,6 +24,9 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
   });
 
   const [erroCpf, setErroCpf] = useState<string | null>(null);
+  const [erroTelefone, setErroTelefone] = useState<string | null>(null);
+  const [erroEmail, setErroEmail] = useState<string | null>(null);
+  const [erroDataNascimento, setErroDataNascimento] = useState<string | null>(null);
 
   // Estado para cadastro inicial de endereço obrigatório
   const [enderecoInicial, setEnderecoInicial] = useState<Endereco>({
@@ -88,6 +91,45 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
     if (name === 'telefone') {
       const formatado = formatarTelefone(value);
       setFormData(prev => ({ ...prev, telefone: formatado }));
+      const apenasDigitos = formatado.replace(/\D/g, '');
+      if (apenasDigitos.length === 10 || apenasDigitos.length === 11) {
+        if (!validarTelefone(formatado)) {
+          setErroTelefone('Telefone inválido. Verifique o DDD e os dígitos informados.');
+        } else {
+          setErroTelefone(null);
+        }
+      } else if (apenasDigitos.length > 0) {
+        setErroTelefone('O telefone deve conter DDD + 8 ou 9 dígitos.');
+      } else {
+        setErroTelefone(null);
+      }
+      return;
+    }
+
+    if (name === 'email') {
+      setFormData(prev => ({ ...prev, email: value }));
+      if (value.trim().length > 0 && !validarEmail(value)) {
+        setErroEmail('Formato de e-mail inválido (ex: nome@dominio.com).');
+      } else {
+        setErroEmail(null);
+      }
+      return;
+    }
+
+    if (name === 'dataNascimento') {
+      setFormData(prev => ({ ...prev, dataNascimento: value }));
+      if (value) {
+        const dataEscolhida = new Date(value);
+        const hoje = new Date();
+        hoje.setHours(23, 59, 59, 999);
+        if (dataEscolhida > hoje) {
+          setErroDataNascimento('A data de nascimento não pode ser no futuro.');
+        } else {
+          setErroDataNascimento(null);
+        }
+      } else {
+        setErroDataNascimento(null);
+      }
       return;
     }
 
@@ -145,6 +187,29 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
       return;
     }
 
+    if (!validarTelefone(formData.telefone)) {
+      setErroTelefone('Telefone inválido. Informe um telefone brasileiro com DDD válido.');
+      alert('Telefone inválido. Verifique o DDD e os dígitos informados.');
+      return;
+    }
+
+    if (!validarEmail(formData.email)) {
+      setErroEmail('Por favor, informe um e-mail válido.');
+      alert('E-mail inválido. Verifique o endereço digitado.');
+      return;
+    }
+
+    if (formData.dataNascimento) {
+      const dataEscolhida = new Date(formData.dataNascimento);
+      const hoje = new Date();
+      hoje.setHours(23, 59, 59, 999);
+      if (dataEscolhida > hoje) {
+        setErroDataNascimento('A data de nascimento não pode ser no futuro.');
+        alert('A data de nascimento não pode ser no futuro.');
+        return;
+      }
+    }
+
     const payload: Cliente = {
       ...formData,
       cpf: formatarCpf(formData.cpf),
@@ -179,12 +244,13 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
           <label className="form-label">E-mail *</label>
           <input
             type="email"
-            className="form-control"
+            className={`form-control ${erroEmail ? 'is-invalid' : ''}`}
             name="email"
             value={formData.email}
             onChange={handleChange}
             required
           />
+          {erroEmail && <div className="invalid-feedback d-block">{erroEmail}</div>}
         </div>
       </div>
 
@@ -207,7 +273,7 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
           <label className="form-label">Telefone *</label>
           <input
             type="text"
-            className="form-control"
+            className={`form-control ${erroTelefone ? 'is-invalid' : ''}`}
             name="telefone"
             placeholder="(11) 90000-0000"
             value={formData.telefone}
@@ -215,17 +281,20 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
             maxLength={15}
             required
           />
+          {erroTelefone && <div className="invalid-feedback d-block">{erroTelefone}</div>}
         </div>
         <div className="col-md-4">
           <label className="form-label">Data de Nascimento *</label>
           <input
             type="date"
-            className="form-control"
+            className={`form-control ${erroDataNascimento ? 'is-invalid' : ''}`}
             name="dataNascimento"
+            max={new Date().toISOString().split('T')[0]}
             value={formData.dataNascimento}
             onChange={handleChange}
             required
           />
+          {erroDataNascimento && <div className="invalid-feedback d-block">{erroDataNascimento}</div>}
         </div>
       </div>
 

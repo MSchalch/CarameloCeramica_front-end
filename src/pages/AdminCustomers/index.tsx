@@ -4,7 +4,7 @@ import CustomerProfileModal from '../../components/CustomerProfileModal';
 import CustomerOrdersHistoryModal from '../../components/CustomerOrdersHistoryModal';
 import { customerService } from '../../services/customerService';
 import type { Cliente } from '../../types/customer';
-import { formatarCpf } from '../../utils/formatters';
+import { formatarCpf, formatarTelefone } from '../../utils/formatters';
 
 const AdminCustomers = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -118,6 +118,7 @@ const AdminCustomers = () => {
                     <th>Código</th>
                     <th>Nome Completo</th>
                     <th>E-mail</th>
+                    <th>Telefone</th>
                     <th>CPF</th>
                     <th>Ranking</th>
                     <th>Status</th>
@@ -135,6 +136,9 @@ const AdminCustomers = () => {
                       </td>
                       <td className="fw-bold">{customer.nome}</td>
                       <td>{customer.email}</td>
+                      <td>
+                        <span className="font-monospace">{formatarTelefone(customer.telefone)}</span>
+                      </td>
                       <td>
                         <span className="font-monospace">{formatarCpf(customer.cpf)}</span>
                       </td>
