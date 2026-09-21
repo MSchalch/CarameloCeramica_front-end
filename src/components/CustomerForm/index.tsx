@@ -27,6 +27,8 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
   const [erroTelefone, setErroTelefone] = useState<string | null>(null);
   const [erroEmail, setErroEmail] = useState<string | null>(null);
   const [erroDataNascimento, setErroDataNascimento] = useState<string | null>(null);
+  const [confirmarSenha, setConfirmarSenha] = useState<string>('');
+  const [erroConfirmarSenha, setErroConfirmarSenha] = useState<string | null>(null);
 
   // Estado para cadastro inicial de endereço obrigatório
   const [enderecoInicial, setEnderecoInicial] = useState<Endereco>({
@@ -64,8 +66,20 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
         telefone: formatarTelefone(initialData.telefone),
         senha: '',
       });
+      setConfirmarSenha('');
+      setErroConfirmarSenha(null);
     }
   }, [initialData]);
+
+  const handleConfirmarSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setConfirmarSenha(value);
+    if (formData.senha && value !== formData.senha) {
+      setErroConfirmarSenha('As senhas não coincidem.');
+    } else {
+      setErroConfirmarSenha(null);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -129,6 +143,16 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
         }
       } else {
         setErroDataNascimento(null);
+      }
+      return;
+    }
+
+    if (name === 'senha') {
+      setFormData(prev => ({ ...prev, senha: value }));
+      if (confirmarSenha && value !== confirmarSenha) {
+        setErroConfirmarSenha('As senhas não coincidem.');
+      } else {
+        setErroConfirmarSenha(null);
       }
       return;
     }
@@ -206,6 +230,18 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
       if (dataEscolhida > hoje) {
         setErroDataNascimento('A data de nascimento não pode ser no futuro.');
         alert('A data de nascimento não pode ser no futuro.');
+        return;
+      }
+    }
+
+    if (!isEdit || formData.senha) {
+      if (!isEdit && !formData.senha) {
+        alert('Por favor, informe uma senha para o cliente.');
+        return;
+      }
+      if (formData.senha !== confirmarSenha) {
+        setErroConfirmarSenha('As senhas não coincidem.');
+        alert('As senhas digitadas não coincidem. Por favor, confirme sua senha.');
         return;
       }
     }
@@ -315,7 +351,7 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
             <option value="Prefiro não informar">Prefiro não informar</option>
           </select>
         </div>
-        <div className="col-md-8">
+        <div className="col-md-4">
           <label className="form-label">Senha {isEdit ? '(Deixe em branco para não alterar)' : '*'}</label>
           <input
             type="password"
@@ -326,6 +362,19 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
             required={!isEdit}
             placeholder={isEdit ? 'Nova senha opcional' : 'Senha de acesso segura'}
           />
+        </div>
+        <div className="col-md-4">
+          <label className="form-label">Confirmar Senha {isEdit ? '(Opcional)' : '*'}</label>
+          <input
+            type="password"
+            className={`form-control ${erroConfirmarSenha ? 'is-invalid' : ''}`}
+            name="confirmarSenha"
+            value={confirmarSenha}
+            onChange={handleConfirmarSenhaChange}
+            required={!isEdit || !!formData.senha}
+            placeholder={isEdit ? 'Confirme a nova senha' : 'Confirme sua senha'}
+          />
+          {erroConfirmarSenha && <div className="invalid-feedback d-block">{erroConfirmarSenha}</div>}
         </div>
       </div>
 
