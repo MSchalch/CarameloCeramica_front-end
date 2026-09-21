@@ -40,6 +40,35 @@ describe('Validação Rigorosa das Regras de Negócio de Clientes (Documento de 
     cy.url().should('include', '/customer/new');
   });
 
+  it('RNF0031: Deve impedir cadastro quando a senha for fraca (sem maiúscula, minúscula, especial ou menos de 8 dígitos)', () => {
+    cy.visit('/customer/new');
+
+    cy.get('input[name="nome"]').type('Cliente Senha Fraca');
+    cy.get('input[name="email"]').type(`senhafraca.${Date.now()}@email.com`);
+    cy.get('input[name="cpf"]').type(gerarCpfValido());
+    cy.get('input[name="telefone"]').type('(11) 91234-5678');
+    cy.get('input[name="dataNascimento"]').type('1990-01-01');
+    cy.get('select[name="genero"]').select('Feminino');
+
+    // 1. Senha com menos de 8 caracteres
+    cy.get('input[name="senha"]').type('Fraca@1');
+    cy.get('input[name="confirmarSenha"]').type('Fraca@1');
+    cy.contains('.invalid-feedback', 'A senha deve conter no mínimo 8 caracteres').should('be.visible');
+
+    // 2. Senha sem caractere especial
+    cy.get('input[name="senha"]').clear().type('SenhaSemEspecial123');
+    cy.get('input[name="confirmarSenha"]').clear().type('SenhaSemEspecial123');
+    cy.contains('.invalid-feedback', 'A senha deve conter no mínimo 8 caracteres').should('be.visible');
+
+    // Ao tentar submeter com senha fraca, exibe alerta e bloqueia o envio
+    cy.on('window:alert', (text) => {
+      expect(text).to.contain('Senha fraca');
+    });
+
+    cy.get('button[type="submit"]').contains('Cadastrar Cliente').click();
+    cy.url().should('include', '/customer/new');
+  });
+
   it('RF0021, RN0026 e RNF0035: Deve cadastrar cliente com todos os dados obrigatórios e gerar Código Único', () => {
     cy.visit('/customer/new');
 

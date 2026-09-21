@@ -1,24 +1,25 @@
-import { useState, useEffect } from 'react';
-import ProductCard from '../../components/ProductCard';
-import { productService } from '../../services/productService';
-import type { Peca } from '../../types/product';
+import { useState, useEffect } from "react";
+import ProductCard from "../../components/ProductCard";
+import { productService } from "../../services/productService";
+import type { Peca } from "../../types/product";
 
 const Home = () => {
   const [products, setProducts] = useState<Peca[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchCatalog = async () => {
       setLoading(true);
+
       try {
-        const cat = selectedCategory === 'all' ? '' : selectedCategory;
-        const data = await productService.listarPecas('', cat, 0, 40);
+        const cat = selectedCategory === "all" ? "" : selectedCategory;
+        const data = await productService.listarPecas("", cat, 0, 40);
         // Exibir apenas produtos ativos na vitrine
-        const ativos = (data.content || []).filter(p => p.ativo);
+        const ativos = (data.content || []).filter((p) => p.ativo);
         setProducts(ativos);
       } catch (err) {
-        console.error('Erro ao carregar catálogo da Home:', err);
+        console.error("Erro ao carregar catálogo da Home:", err);
       } finally {
         setLoading(false);
       }
@@ -30,8 +31,13 @@ const Home = () => {
   return (
     <div className="container py-5">
       <div className="row mb-5 text-center">
-        <h1 className="display-4 fw-bold text-dark">Bem-vindo à Caramelo Cerâmicas</h1>
-        <p className="lead text-muted">Encontre peças artesanais exclusivas que darão vida e personalidade ao seu lar.</p>
+        <h1 className="display-4 fw-bold text-dark">
+          Bem-vindo à Caramelo Cerâmicas
+        </h1>
+        <p className="lead text-muted">
+          Encontre peças artesanais exclusivas que darão vida e personalidade ao
+          seu lar.
+        </p>
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -67,7 +73,7 @@ const Home = () => {
                   category: product.categoria,
                   img:
                     product.imagemUrl ||
-                    'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80',
+                    "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80",
                 }}
               />
             </div>

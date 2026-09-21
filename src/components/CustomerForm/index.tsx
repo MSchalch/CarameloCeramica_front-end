@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Cliente, Endereco, CartaoCredito } from '../../types/customer';
 import { viaCepService } from '../../services/viaCepService';
-import { formatarCpf, validarCpf, formatarTelefone, validarTelefone, validarEmail } from '../../utils/formatters';
+import { formatarCpf, validarCpf, formatarTelefone, validarTelefone, validarEmail, validarSenhaForte } from '../../utils/formatters';
 
 interface CustomerFormProps {
   initialData?: Cliente;
@@ -27,6 +27,7 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
   const [erroTelefone, setErroTelefone] = useState<string | null>(null);
   const [erroEmail, setErroEmail] = useState<string | null>(null);
   const [erroDataNascimento, setErroDataNascimento] = useState<string | null>(null);
+  const [erroSenha, setErroSenha] = useState<string | null>(null);
   const [confirmarSenha, setConfirmarSenha] = useState<string>('');
   const [erroConfirmarSenha, setErroConfirmarSenha] = useState<string | null>(null);
 
@@ -68,6 +69,7 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
       });
       setConfirmarSenha('');
       setErroConfirmarSenha(null);
+      setErroSenha(null);
     }
   }, [initialData]);
 
@@ -149,6 +151,11 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
 
     if (name === 'senha') {
       setFormData(prev => ({ ...prev, senha: value }));
+      if (value.length > 0 && !validarSenhaForte(value)) {
+        setErroSenha('A senha deve conter no mínimo 8 caracteres, maiúsculas, minúsculas e especiais (RNF0031).');
+      } else {
+        setErroSenha(null);
+      }
       if (confirmarSenha && value !== confirmarSenha) {
         setErroConfirmarSenha('As senhas não coincidem.');
       } else {
@@ -239,8 +246,9 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
         alert('Por favor, informe uma senha para o cliente.');
         return;
       }
-      if (formData.senha.length < 8) {
-        alert('A senha deve conter no mínimo 8 caracteres (RNF0031).');
+      if (!validarSenhaForte(formData.senha)) {
+        setErroSenha('A senha deve conter no mínimo 8 caracteres, com maiúsculas, minúsculas e especiais (RNF0031).');
+        alert('Senha fraca! A senha deve conter no mínimo 8 caracteres, incluindo letras maiúsculas, minúsculas e caracteres especiais (RNF0031).');
         return;
       }
       if (formData.senha !== confirmarSenha) {
@@ -359,13 +367,17 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
           <label className="form-label">Senha {isEdit ? '(Deixe em branco para não alterar)' : '*'}</label>
           <input
             type="password"
-            className="form-control"
+            className={`form-control ${erroSenha ? 'is-invalid' : ''}`}
             name="senha"
             value={formData.senha || ''}
             onChange={handleChange}
             required={!isEdit}
             placeholder={isEdit ? 'Nova senha opcional' : 'Senha de acesso segura'}
           />
+          {erroSenha && <div className="invalid-feedback d-block">{erroSenha}</div>}
+          <small className="text-muted d-block mt-1" style={{ fontSize: '0.75rem' }}>
+            Mínimo 8 caracteres, maiúscula, minúscula e especial (@, #, etc).
+          </small>
         </div>
         <div className="col-md-4">
           <label className="form-label">Confirmar Senha {isEdit ? '(Opcional)' : '*'}</label>

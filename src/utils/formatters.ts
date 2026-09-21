@@ -149,3 +149,16 @@ export const validarEmail = (email: string | undefined | null): boolean => {
   if (!email) return false;
   return /^[\w.-]+@([\w-]+\.)+[\w-]{2,4}$/.test(email.trim());
 };
+
+/**
+ * RNF0031 - Valida política de senha forte:
+ * Mínimo de 8 caracteres, contendo pelo menos uma letra maiúscula, uma minúscula e um caractere especial.
+ */
+export const validarSenhaForte = (senha: string | undefined | null): boolean => {
+  if (!senha || senha.length < 8) return false;
+  const temMinuscula = /[a-z]/.test(senha);
+  const temMaiuscula = /[A-Z]/.test(senha);
+  const temEspecial = /[^a-zA-Z0-9]/.test(senha);
+  return temMinuscula && temMaiuscula && temEspecial;
+};
+
