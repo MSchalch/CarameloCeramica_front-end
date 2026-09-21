@@ -57,7 +57,7 @@ const AdminCustomers = () => {
   };
 
   return (
-    <div className="container py-5">
+    <div className="container-fluid px-lg-5 py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 className="fw-bold mb-1">Gerenciar Clientes</h2>
@@ -111,43 +111,45 @@ const AdminCustomers = () => {
             </div>
           ) : (
             <div className="table-responsive">
-              <table className="table table-hover align-middle">
+              <table className="table table-hover align-middle mb-0">
                 <thead className="table-light">
                   <tr>
-                    <th>ID</th>
-                    <th>Código</th>
-                    <th>Nome Completo</th>
-                    <th>E-mail</th>
-                    <th>Telefone</th>
-                    <th>CPF</th>
-                    <th>Ranking</th>
-                    <th>Status</th>
-                    <th className="text-end">Ações</th>
+                    <th style={{ width: '60px' }}>ID</th>
+                    <th className="text-nowrap" style={{ width: '130px' }}>Código</th>
+                    <th style={{ minWidth: '180px' }}>Nome Completo</th>
+                    <th style={{ minWidth: '180px' }}>E-mail</th>
+                    <th className="text-nowrap" style={{ minWidth: '150px' }}>Telefone</th>
+                    <th className="text-nowrap" style={{ minWidth: '140px' }}>CPF</th>
+                    <th className="text-center text-nowrap" style={{ width: '90px' }}>Ranking</th>
+                    <th className="text-center text-nowrap" style={{ width: '90px' }}>Status</th>
+                    <th className="text-end text-nowrap" style={{ width: '130px' }}>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {customers.map((customer) => (
                     <tr key={customer.id}>
-                      <td className="fw-bold text-muted">#{customer.id}</td>
-                      <td>
-                        <span className="badge bg-light text-dark border">
+                      <td className="fw-bold text-muted small">#{customer.id}</td>
+                      <td className="text-nowrap">
+                        <span className="badge bg-light text-dark border font-monospace">
                           {customer.codigoCliente || 'N/A'}
                         </span>
                       </td>
-                      <td className="fw-bold">{customer.nome}</td>
-                      <td>{customer.email}</td>
+                      <td className="fw-bold text-dark">{customer.nome}</td>
                       <td>
-                        <span className="font-monospace">{formatarTelefone(customer.telefone)}</span>
+                        <span className="small text-muted">{customer.email}</span>
                       </td>
-                      <td>
-                        <span className="font-monospace">{formatarCpf(customer.cpf)}</span>
+                      <td className="text-nowrap">
+                        <span className="font-monospace small">{formatarTelefone(customer.telefone)}</span>
                       </td>
-                      <td>
+                      <td className="text-nowrap">
+                        <span className="font-monospace small">{formatarCpf(customer.cpf)}</span>
+                      </td>
+                      <td className="text-center text-nowrap">
                         <span className="badge bg-info text-dark">
                           ★ {customer.ranking ?? 0}
                         </span>
                       </td>
-                      <td>
+                      <td className="text-center text-nowrap">
                         <span
                           className={`badge ${
                             customer.ativo ? 'bg-success' : 'bg-danger'
@@ -156,36 +158,38 @@ const AdminCustomers = () => {
                           {customer.ativo ? 'Ativo' : 'Inativo'}
                         </span>
                       </td>
-                      <td className="text-end">
-                        <button
-                          className="btn btn-sm btn-outline-dark me-2"
-                          title="Ver Detalhes / Editar"
-                          onClick={() => setSelectedCustomer(customer)}
-                        >
-                          <i className="bi bi-pencil-square me-1"></i>Editar
-                        </button>
-                        <button
-                          className={`btn btn-sm me-2 ${
-                            customer.ativo ? 'btn-outline-danger' : 'btn-outline-success'
-                          }`}
-                          title={customer.ativo ? 'Inativar Cliente' : 'Reativar Cliente'}
-                          onClick={() => handleToggleStatus(customer)}
-                        >
-                          <i className={`bi ${customer.ativo ? 'bi-person-x' : 'bi-person-check'}`}></i>
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-warning"
-                          title="Histórico de Pedidos"
-                          onClick={() => setHistoryCustomer(customer)}
-                        >
-                          <i className="bi bi-box-seam"></i>
-                        </button>
+                      <td className="text-end text-nowrap">
+                        <div className="btn-group btn-group-sm" role="group">
+                          <button
+                            className="btn btn-outline-dark"
+                            title="Ver Detalhes / Editar"
+                            onClick={() => setSelectedCustomer(customer)}
+                          >
+                            <i className="bi bi-pencil-square"></i>
+                          </button>
+                          <button
+                            className={`btn ${
+                              customer.ativo ? 'btn-outline-danger' : 'btn-outline-success'
+                            }`}
+                            title={customer.ativo ? 'Inativar Cliente' : 'Reativar Cliente'}
+                            onClick={() => handleToggleStatus(customer)}
+                          >
+                            <i className={`bi ${customer.ativo ? 'bi-person-x' : 'bi-person-check'}`}></i>
+                          </button>
+                          <button
+                            className="btn btn-outline-warning text-dark"
+                            title="Histórico de Pedidos"
+                            onClick={() => setHistoryCustomer(customer)}
+                          >
+                            <i className="bi bi-box-seam"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                   {customers.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="text-center py-5 text-muted">
+                      <td colSpan={9} className="text-center py-5 text-muted">
                         <i className="bi bi-people fs-1 d-block mb-2 text-secondary"></i>
                         Nenhum cliente cadastrado ou encontrado.
                       </td>
