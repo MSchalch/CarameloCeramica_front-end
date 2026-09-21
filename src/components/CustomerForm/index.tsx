@@ -239,6 +239,10 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
         alert('Por favor, informe uma senha para o cliente.');
         return;
       }
+      if (formData.senha.length < 8) {
+        alert('A senha deve conter no mínimo 8 caracteres (RNF0031).');
+        return;
+      }
       if (formData.senha !== confirmarSenha) {
         setErroConfirmarSenha('As senhas não coincidem.');
         alert('As senhas digitadas não coincidem. Por favor, confirme sua senha.');

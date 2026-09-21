@@ -62,8 +62,10 @@ const Login: React.FC = () => {
 
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
-              <label className="form-label fw-semibold">Usuário ou E-mail</label>
+              <label htmlFor="loginInput" className="form-label fw-semibold">Usuário ou E-mail</label>
               <input
+                id="loginInput"
+                name="login"
                 type="text"
                 className="form-control"
                 placeholder="Admin ou seu@email.com"
@@ -74,8 +76,10 @@ const Login: React.FC = () => {
               />
             </div>
             <div className="mb-4">
-              <label className="form-label fw-semibold">Senha</label>
+              <label htmlFor="senhaInput" className="form-label fw-semibold">Senha</label>
               <input
+                id="senhaInput"
+                name="senha"
                 type="password"
                 className="form-control"
                 placeholder="••••••"
