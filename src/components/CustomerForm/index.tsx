@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Cliente, Endereco, CartaoCredito } from '../../types/customer';
 import { viaCepService } from '../../services/viaCepService';
+import { formatarCpf, validarCpf, formatarTelefone } from '../../utils/formatters';
 
 interface CustomerFormProps {
   initialData?: Cliente;
@@ -21,6 +22,8 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
     enderecos: [],
     cartoes: [],
   });
+
+  const [erroCpf, setErroCpf] = useState<string | null>(null);
 
   // Estado para cadastro inicial de endereço obrigatório
   const [enderecoInicial, setEnderecoInicial] = useState<Endereco>({
@@ -54,6 +57,8 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
     if (initialData) {
       setFormData({
         ...initialData,
+        cpf: formatarCpf(initialData.cpf),
+        telefone: formatarTelefone(initialData.telefone),
         senha: '',
       });
     }
@@ -61,6 +66,31 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    if (name === 'cpf') {
+      const formatado = formatarCpf(value);
+      setFormData(prev => ({ ...prev, cpf: formatado }));
+      const apenasNumeros = formatado.replace(/\D/g, '');
+      if (apenasNumeros.length === 11) {
+        if (!validarCpf(formatado)) {
+          setErroCpf('CPF inválido. Verifique os dígitos informados.');
+        } else {
+          setErroCpf(null);
+        }
+      } else if (apenasNumeros.length > 0 && apenasNumeros.length < 11) {
+        setErroCpf('O CPF deve ter 11 dígitos.');
+      } else {
+        setErroCpf(null);
+      }
+      return;
+    }
+
+    if (name === 'telefone') {
+      const formatado = formatarTelefone(value);
+      setFormData(prev => ({ ...prev, telefone: formatado }));
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -109,8 +139,16 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!validarCpf(formData.cpf)) {
+      setErroCpf('Por favor, informe um CPF válido com 11 dígitos no formato 000.000.000-00.');
+      alert('CPF inválido. O CPF deve conter 11 dígitos válidos.');
+      return;
+    }
+
     const payload: Cliente = {
       ...formData,
+      cpf: formatarCpf(formData.cpf),
+      telefone: formatarTelefone(formData.telefone),
       enderecos: isEdit
         ? formData.enderecos
         : [enderecoInicial],
@@ -155,13 +193,15 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
           <label className="form-label">CPF *</label>
           <input
             type="text"
-            className="form-control"
+            className={`form-control ${erroCpf ? 'is-invalid' : ''}`}
             name="cpf"
             placeholder="000.000.000-00"
             value={formData.cpf}
             onChange={handleChange}
+            maxLength={14}
             required
           />
+          {erroCpf && <div className="invalid-feedback d-block">{erroCpf}</div>}
         </div>
         <div className="col-md-4">
           <label className="form-label">Telefone *</label>
@@ -172,6 +212,7 @@ const CustomerForm = ({ initialData, onSubmit, isEdit = false, loading = false }
             placeholder="(11) 90000-0000"
             value={formData.telefone}
             onChange={handleChange}
+            maxLength={15}
             required
           />
         </div>

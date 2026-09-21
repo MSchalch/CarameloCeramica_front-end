@@ -4,6 +4,7 @@ import CustomerProfileModal from '../../components/CustomerProfileModal';
 import CustomerOrdersHistoryModal from '../../components/CustomerOrdersHistoryModal';
 import { customerService } from '../../services/customerService';
 import type { Cliente } from '../../types/customer';
+import { formatarCpf } from '../../utils/formatters';
 
 const AdminCustomers = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -134,7 +135,9 @@ const AdminCustomers = () => {
                       </td>
                       <td className="fw-bold">{customer.nome}</td>
                       <td>{customer.email}</td>
-                      <td>{customer.cpf}</td>
+                      <td>
+                        <span className="font-monospace">{formatarCpf(customer.cpf)}</span>
+                      </td>
                       <td>
                         <span className="badge bg-info text-dark">
                           ★ {customer.ranking ?? 0}
