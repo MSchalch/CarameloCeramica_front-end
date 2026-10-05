@@ -78,6 +78,7 @@ const Cart = () => {
   const updateCart = (newItems: CartItem[]) => {
     setItems(newItems);
     localStorage.setItem('caramelo_cart', JSON.stringify(newItems));
+    window.dispatchEvent(new Event('cartUpdated'));
   };
 
   const handleQtyChange = (id: number, qty: number) => {

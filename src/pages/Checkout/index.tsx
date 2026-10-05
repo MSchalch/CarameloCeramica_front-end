@@ -510,6 +510,7 @@ const Checkout = () => {
 
       await orderService.criarPedido(pedidoPayload);
       localStorage.removeItem('caramelo_cart');
+      window.dispatchEvent(new Event('cartUpdated'));
       alert('🎉 Pedido realizado com sucesso! Status: EM PROCESSAMENTO (RF0038)');
       navigate('/profile/orders');
     } catch (err: any) {

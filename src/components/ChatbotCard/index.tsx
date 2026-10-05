@@ -139,6 +139,7 @@ const ChatbotCard: React.FC = () => {
     }
 
     localStorage.setItem('caramelo_cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('cartUpdated'));
     toast.success(`"${peca.nome}" adicionado ao carrinho!`, { position: 'bottom-right' });
   };
 

@@ -1,10 +1,48 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [cartCount, setCartCount] = useState<number>(0);
+
+  const carregarQuantidadeCarrinho = () => {
+    try {
+      const saved = localStorage.getItem('caramelo_cart');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const total = parsed.reduce(
+            (acc: number, item: any) => acc + (Number(item.quantidade) || 1),
+            0
+          );
+          setCartCount(total);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao ler quantidade do carrinho na Navbar:', e);
+    }
+    setCartCount(0);
+  };
+
+  useEffect(() => {
+    carregarQuantidadeCarrinho();
+
+    const handleCartUpdate = () => {
+      carregarQuantidadeCarrinho();
+    };
+
+    window.addEventListener('storage', handleCartUpdate);
+    window.addEventListener('cartUpdated', handleCartUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleCartUpdate);
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -51,8 +89,31 @@ const Navbar: React.FC = () => {
 
           <ul className="navbar-nav align-items-center">
             <li className="nav-item">
-              <Link className="nav-link" to="/cart" title="Carrinho de Compras">
+              <Link
+                className="nav-link position-relative d-inline-flex align-items-center btn-carrinho-navbar px-2"
+                to="/cart"
+                title="Carrinho de Compras"
+              >
                 <i className="bi bi-cart3 fs-5"></i>
+                {cartCount > 0 && (
+                  <span
+                    className="badge bg-danger rounded-pill text-white fw-bold badge-carrinho-contador position-absolute"
+                    style={{
+                      top: '2px',
+                      right: '-4px',
+                      fontSize: '0.65rem',
+                      minWidth: '18px',
+                      height: '18px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 4px',
+                      boxShadow: '0 0 0 2px #212529',
+                    }}
+                  >
+                    {cartCount}
+                  </span>
+                )}
               </Link>
             </li>
 

@@ -60,6 +60,7 @@ const ProductCard = ({ product }: { product: Product }) => {
     }
 
     localStorage.setItem('caramelo_cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('cartUpdated'));
     navigate('/cart');
   };
 
