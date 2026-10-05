@@ -8,6 +8,7 @@ interface Product {
   category: string;
   img: string;
   estoque?: number;
+  peso?: number;
 }
 
 const ProductCard = ({ product }: { product: Product }) => {
@@ -54,6 +55,7 @@ const ProductCard = ({ product }: { product: Product }) => {
         categoria: product.category,
         quantidade: quantidade,
         estoque: estoqueDisponivel,
+        peso: product.peso || 500,
       });
     }
 

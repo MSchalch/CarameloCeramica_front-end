@@ -6,6 +6,11 @@ import { viaCepService } from '../../services/viaCepService';
 import type { Cliente, CartaoCredito, Endereco } from '../../types/customer';
 import type { Pedido, ItemPedido, PagamentoPedido, Cupom } from '../../types/order';
 import { useAuth } from '../../contexts/AuthContext';
+import {
+  calcularOpcoesFrete,
+  type OpcaoFrete,
+  type CotacaoFreteResultado,
+} from '../../services/shippingService';
 
 interface CartItem {
   id: number;
@@ -15,6 +20,7 @@ interface CartItem {
   categoria: string;
   quantidade: number;
   estoque: number;
+  peso?: number;
 }
 
 interface CartaoPagamentoForm {
@@ -132,6 +138,41 @@ const Checkout = () => {
   const totalItensQtd = items.reduce((acc, item) => acc + item.quantidade, 0);
   const subtotal = items.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
 
+  // Cotação com Opções PAC e SEDEX por endereço e peso (RF0034 - Opção 1)
+  const [cotacaoCheckout, setCotacaoCheckout] = useState<CotacaoFreteResultado | null>(null);
+  const [modalidadeFrete, setModalidadeFrete] = useState<'PAC' | 'SEDEX'>('PAC');
+  const [freteManual, setFreteManual] = useState<number | null>(null);
+
+  const enderecoSelecionado = currentCustomer?.enderecos?.find((e) => e.id === selectedAddressId);
+
+  // Recupera opção vinda do carrinho se houver
+  useEffect(() => {
+    const salva = localStorage.getItem('caramelo_frete_opcao');
+    if (salva) {
+      try {
+        const parsed = JSON.parse(salva);
+        if (parsed.opcao?.id) {
+          setModalidadeFrete(parsed.opcao.id);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  // Recalcula cotação ao alterar endereço ou itens
+  useEffect(() => {
+    if (items.length > 0) {
+      const cep = enderecoSelecionado?.cep || '01310-100';
+      const uf = enderecoSelecionado?.estado || 'SP';
+      calcularOpcoesFrete(cep, items, uf).then((res) => {
+        setCotacaoCheckout(res);
+        const op = res.opcoes.find((o) => o.id === modalidadeFrete) || res.opcoes[0];
+        setFreteManual(op.valor);
+      });
+    }
+  }, [enderecoSelecionado?.id, enderecoSelecionado?.cep, enderecoSelecionado?.estado, items, modalidadeFrete]);
+
   // Cálculo de Frete Dinâmico (RF0034) baseado na UF do endereço de entrega e na quantidade de itens
   const calcularFretePorEndereco = (uf?: string) => {
     if (items.length === 0) return 0;
@@ -148,8 +189,8 @@ const Checkout = () => {
     return baseFrete + adicionalItens;
   };
 
-  const enderecoSelecionado = currentCustomer?.enderecos?.find((e) => e.id === selectedAddressId);
-  const frete = calcularFretePorEndereco(enderecoSelecionado?.estado);
+  const frete = freteManual !== null ? freteManual : calcularFretePorEndereco(enderecoSelecionado?.estado);
+  const opcaoFreteAtiva = cotacaoCheckout?.opcoes.find((o) => o.id === modalidadeFrete) || cotacaoCheckout?.opcoes[0];
   const desconto = cupomAplicado ? cupomAplicado.valor : 0.0;
   const valorComDescontoEFrete = Math.max(0, subtotal - desconto + frete);
 
@@ -545,6 +586,82 @@ const Checkout = () => {
             </div>
           </div>
 
+          {/* Opção de Envio e Frete (RF0034 - Opção 1: PAC vs. SEDEX) */}
+          <div className="card shadow-sm border-0 mb-4 secao-opcao-envio">
+            <div className="card-header bg-white fw-bold fs-5 d-flex justify-content-between align-items-center">
+              <span>Opção de Envio e Frete (RF0034)</span>
+              {cotacaoCheckout && (
+                <span className="badge bg-light text-dark border small fw-normal">
+                  <i className="bi bi-box-seam me-1 text-warning"></i>
+                  Peso: {cotacaoCheckout.pesoTotalKg.toFixed(2).replace('.', ',')} kg
+                </span>
+              )}
+            </div>
+            <div className="card-body">
+              <p className="text-muted small mb-3">
+                Selecione a modalidade de entrega para o endereço selecionado. O cálculo considera a região de destino e o peso das peças com embalagem protetora reforçada.
+              </p>
+              {cotacaoCheckout ? (
+                <div className="row g-2">
+                  {cotacaoCheckout.opcoes.map((op) => {
+                    const isAtiva = modalidadeFrete === op.id;
+                    return (
+                      <div className="col-12 col-md-6" key={op.id}>
+                        <div
+                          onClick={() => {
+                            setModalidadeFrete(op.id);
+                            setFreteManual(op.valor);
+                          }}
+                          className={`card p-3 border transition-all ${
+                            isAtiva ? 'border-warning bg-light shadow-sm' : 'bg-white'
+                          }`}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="d-flex justify-content-between align-items-start mb-1">
+                            <div className="form-check mb-0">
+                              <input
+                                className="form-check-input"
+                                type="radio"
+                                name="opcaoFreteCheckout"
+                                id={`frete-chk-${op.id}`}
+                                checked={isAtiva}
+                                onChange={() => {
+                                  setModalidadeFrete(op.id);
+                                  setFreteManual(op.valor);
+                                }}
+                              />
+                              <label
+                                className="form-check-label fw-bold"
+                                htmlFor={`frete-chk-${op.id}`}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                {op.nome}
+                              </label>
+                            </div>
+                            <span className="fw-bold text-success fs-6">
+                              R$ {op.valor.toFixed(2).replace('.', ',')}
+                            </span>
+                          </div>
+                          <div className="small text-muted ms-4">
+                            <i className="bi bi-clock me-1 text-primary"></i>
+                            Prazo: <strong>{op.prazoDias}</strong>
+                          </div>
+                          <small className="text-secondary ms-4 mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                            {op.descricao}
+                          </small>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-muted small">
+                  Calculando opções de frete para o endereço...
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* 2. Cupons de Troca (RN0035, RN0036) */}
           <div className="card shadow-sm border-0 mb-4 secao-cupons-troca">
             <div className="card-header bg-white fw-bold fs-5 d-flex justify-content-between align-items-center">
@@ -871,7 +988,7 @@ const Checkout = () => {
               </div>
               <div className="d-flex justify-content-between mb-2">
                 <span className="text-muted">
-                  Frete ({enderecoSelecionado?.estado || 'SP'})
+                  Frete ({opcaoFreteAtiva ? `${opcaoFreteAtiva.id} - ${opcaoFreteAtiva.uf}` : (enderecoSelecionado?.estado || 'SP')})
                 </span>
                 <span className="fw-bold resumo-checkout-frete">
                   R$ {frete.toFixed(2).replace('.', ',')}

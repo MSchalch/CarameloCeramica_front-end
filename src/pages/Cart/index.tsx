@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import {
+  calcularOpcoesFrete,
+  type OpcaoFrete,
+  type CotacaoFreteResultado,
+} from '../../services/shippingService';
 
 interface CartItem {
   id: number;
@@ -10,6 +15,7 @@ interface CartItem {
   categoria: string;
   quantidade: number;
   estoque: number;
+  peso?: number;
 }
 
 const Cart = () => {
@@ -18,6 +24,10 @@ const Cart = () => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [cepDestino, setCepDestino] = useState('');
   const [freteCalculado, setFreteCalculado] = useState<number | null>(null);
+  const [cotacao, setCotacao] = useState<CotacaoFreteResultado | null>(null);
+  const [opcaoSelecionada, setOpcaoSelecionada] = useState<OpcaoFrete | null>(null);
+  const [calculandoFrete, setCalculandoFrete] = useState(false);
+  const [erroFrete, setErroFrete] = useState<string | null>(null);
 
   const handleFinalizarCompra = () => {
     if (!isAuthenticated) {
@@ -78,14 +88,64 @@ const Cart = () => {
   const subtotal = items.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
   const total = subtotal + frete;
 
-  const handleSimularFrete = () => {
-    if (cepDestino.replace(/\D/g, '').length !== 8) {
-      alert('Informe um CEP válido com 8 dígitos.');
+  const handleSimularFrete = async () => {
+    const limpo = cepDestino.replace(/\D/g, '');
+    if (limpo.length !== 8) {
+      setErroFrete('Informe um CEP válido com 8 dígitos.');
       return;
     }
-    const val = calcularFreteCriterio();
-    setFreteCalculado(val);
+    setErroFrete(null);
+    setCalculandoFrete(true);
+    try {
+      const res = await calcularOpcoesFrete(limpo, items);
+      setCotacao(res);
+      const selecionada = res.opcoes[0]; // PAC por padrão
+      setOpcaoSelecionada(selecionada);
+      setFreteCalculado(selecionada.valor);
+      localStorage.setItem(
+        'caramelo_frete_opcao',
+        JSON.stringify({
+          cep: res.cep,
+          cidade: res.cidade,
+          uf: res.uf,
+          opcao: selecionada,
+        })
+      );
+    } catch {
+      setErroFrete('Não foi possível calcular o frete para o CEP informado.');
+    } finally {
+      setCalculandoFrete(false);
+    }
   };
+
+  const handleSelecionarOpcaoFrete = (op: OpcaoFrete) => {
+    setOpcaoSelecionada(op);
+    setFreteCalculado(op.valor);
+    if (cotacao) {
+      localStorage.setItem(
+        'caramelo_frete_opcao',
+        JSON.stringify({
+          cep: cotacao.cep,
+          cidade: cotacao.cidade,
+          uf: cotacao.uf,
+          opcao: op,
+        })
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (cotacao && items.length > 0) {
+      calcularOpcoesFrete(cotacao.cep, items, cotacao.uf).then((novaCotacao) => {
+        setCotacao(novaCotacao);
+        const mantida =
+          novaCotacao.opcoes.find((o) => o.id === opcaoSelecionada?.id) ||
+          novaCotacao.opcoes[0];
+        setOpcaoSelecionada(mantida);
+        setFreteCalculado(mantida.valor);
+      });
+    }
+  }, [items]);
 
   return (
     <div className="container py-5">
@@ -167,27 +227,121 @@ const Cart = () => {
               </div>
             </div>
 
-            {/* Simulação de Frete (RF0034) */}
-            <div className="card shadow-sm border-0 mb-4">
-              <div className="card-body p-3">
-                <h6 className="fw-bold mb-2">
-                  <i className="bi bi-truck me-2 text-warning"></i>Simular Frete por CEP (RF0034)
+            {/* Simulação e Cotação de Frete (RF0034 - Opção 1: Peso Real + Região + PAC/SEDEX) */}
+            <div className="card shadow-sm border-0 mb-4 secao-cotacao-frete">
+              <div className="card-body p-4">
+                <h6 className="fw-bold mb-3 d-flex align-items-center">
+                  <i className="bi bi-truck me-2 text-warning fs-5"></i>
+                  Cálculo de Frete e Prazo de Entrega (RF0034)
                 </h6>
-                <div className="input-group" style={{ maxWidth: '350px' }}>
+
+                <div className="input-group mb-2" style={{ maxWidth: '420px' }}>
                   <input
                     type="text"
                     className="form-control"
                     placeholder="Digite seu CEP (Ex: 01310-100)"
                     value={cepDestino}
                     maxLength={9}
-                    onChange={(e) => setCepDestino(e.target.value)}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/\D/g, '');
+                      if (val.length > 5) {
+                        val = `${val.substring(0, 5)}-${val.substring(5, 8)}`;
+                      }
+                      setCepDestino(val);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSimularFrete();
+                      }
+                    }}
                   />
-                  <button className="btn btn-outline-dark" type="button" onClick={handleSimularFrete}>
-                    Calcular
+                  <button
+                    className="btn btn-dark fw-semibold"
+                    type="button"
+                    onClick={handleSimularFrete}
+                    disabled={calculandoFrete}
+                  >
+                    {calculandoFrete ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                        Calculando...
+                      </>
+                    ) : (
+                      'Calcular'
+                    )}
                   </button>
                 </div>
-                <small className="text-muted d-block mt-2">
-                  * Critério de Frete: R$ 15,00 base + R$ 3,00 por item adicional selecionado.
+
+                {erroFrete && (
+                  <div className="alert alert-danger py-2 small mb-3 mt-2">{erroFrete}</div>
+                )}
+
+                {/* Exibição detalhada da Cotação com Opções PAC e SEDEX */}
+                {cotacao && (
+                  <div className="mt-3 p-3 bg-light rounded-3 border resultado-cotacao-frete">
+                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-2 border-bottom">
+                      <span className="small text-muted">
+                        <i className="bi bi-geo-alt-fill text-danger me-1"></i>
+                        Destino: <strong>{cotacao.cidade} - {cotacao.uf}</strong>
+                      </span>
+                      <span className="small text-muted">
+                        <i className="bi bi-box-seam text-secondary me-1"></i>
+                        Peso Total: <strong>{cotacao.pesoTotalKg.toFixed(2).replace('.', ',')} kg</strong> ({totalItensQtd} peças)
+                      </span>
+                    </div>
+
+                    <div className="row g-2">
+                      {cotacao.opcoes.map((opcao) => {
+                        const isAtiva = opcaoSelecionada?.id === opcao.id;
+                        return (
+                          <div className="col-12 col-md-6" key={opcao.id}>
+                            <div
+                              onClick={() => handleSelecionarOpcaoFrete(opcao)}
+                              className={`card h-100 p-3 cursor-pointer border transition-all ${
+                                isAtiva ? 'border-warning bg-white shadow-sm' : 'bg-white'
+                              }`}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <div className="d-flex justify-content-between align-items-start mb-1">
+                                <div className="form-check mb-0">
+                                  <input
+                                    className="form-check-input"
+                                    type="radio"
+                                    name="opcaoFreteCarrinho"
+                                    id={`opcao-${opcao.id}`}
+                                    checked={isAtiva}
+                                    onChange={() => handleSelecionarOpcaoFrete(opcao)}
+                                  />
+                                  <label
+                                    className="form-check-label fw-bold"
+                                    htmlFor={`opcao-${opcao.id}`}
+                                    style={{ cursor: 'pointer' }}
+                                  >
+                                    {opcao.nome}
+                                  </label>
+                                </div>
+                                <span className="fw-bold text-success fs-6">
+                                  R$ {opcao.valor.toFixed(2).replace('.', ',')}
+                                </span>
+                              </div>
+                              <div className="small text-muted ms-4">
+                                <i className="bi bi-clock me-1 text-primary"></i>
+                                Prazo estimado: <strong>{opcao.prazoDias}</strong>
+                              </div>
+                              <small className="text-secondary ms-4 mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                                {opcao.descricao}
+                              </small>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <small className="text-muted d-block mt-2" style={{ fontSize: '0.8rem' }}>
+                  * Cálculo calculado conforme a região do CEP e o peso das peças de cerâmica com embalagem protetora reforçada.
                 </small>
               </div>
             </div>
@@ -202,7 +356,11 @@ const Cart = () => {
                   <span className="fw-bold resumo-subtotal">R$ {subtotal.toFixed(2).replace('.', ',')}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-3">
-                  <span className="text-muted">Frete Calculado</span>
+                  <span className="text-muted">
+                    {opcaoSelecionada
+                      ? `Frete (${opcaoSelecionada.nome})`
+                      : 'Frete Calculado'}
+                  </span>
                   <span className="fw-bold resumo-frete">R$ {frete.toFixed(2).replace('.', ',')}</span>
                 </div>
                 <hr />
