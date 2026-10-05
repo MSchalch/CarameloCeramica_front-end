@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   calcularOpcoesFrete,
+  calcularOpcoesFreteSincrono,
   type OpcaoFrete,
   type CotacaoFreteResultado,
 } from '../../services/shippingService';
@@ -30,6 +31,27 @@ const Cart = () => {
   const [erroFrete, setErroFrete] = useState<string | null>(null);
 
   const handleFinalizarCompra = () => {
+    if (items.length > 0) {
+      const cotacaoSincrona = calcularOpcoesFreteSincrono(
+        cotacao?.cep || '01310-100',
+        items,
+        cotacao?.uf || 'SP'
+      );
+      const opcaoAtual = opcaoSelecionada || cotacaoSincrona.opcoes[0];
+      localStorage.setItem(
+        'caramelo_frete_opcao',
+        JSON.stringify({
+          cep: cotacao?.cep || '01310-100',
+          cidade: cotacao?.cidade || 'São Paulo',
+          uf: cotacao?.uf || 'SP',
+          opcao: {
+            ...opcaoAtual,
+            valor: freteCalculado !== null ? freteCalculado : opcaoAtual.valor,
+          },
+        })
+      );
+    }
+
     if (!isAuthenticated) {
       navigate('/login', {
         state: {
@@ -76,15 +98,10 @@ const Cart = () => {
 
   const totalItensQtd = items.reduce((acc, item) => acc + item.quantidade, 0);
 
-  // Critério de Frete (RF0034): Base R$ 15,00 + R$ 3,00 por item adicional selecionado
-  const calcularFreteCriterio = () => {
-    if (items.length === 0) return 0;
-    const base = 15.0;
-    const extra = Math.max(0, totalItensQtd - 1) * 3.0;
-    return base + extra;
-  };
-
-  const frete = freteCalculado !== null ? freteCalculado : calcularFreteCriterio();
+  // Frete padrão sincronizado (RF0034 - Opção 1: PAC base R$ 15,00)
+  const cotacaoPadrao = calcularOpcoesFreteSincrono('01310-100', items, 'SP');
+  const fretePadrao = cotacaoPadrao.opcoes[0].valor;
+  const frete = freteCalculado !== null ? freteCalculado : (items.length > 0 ? fretePadrao : 0);
   const subtotal = items.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
   const total = subtotal + frete;
 

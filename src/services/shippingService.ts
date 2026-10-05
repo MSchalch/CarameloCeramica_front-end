@@ -120,48 +120,44 @@ export async function calcularOpcoesFrete(
   const pesoTotalKg = Math.max(0.3, Number((pesoTotalGramas / 1000).toFixed(2)));
 
   // 2. Tarifa base e prazos por região de destino (origem: SP)
-  let basePac = 16.0;
-  let baseSedex = 26.0;
+  // Unifica a Região Sudeste (SP, RJ, MG, ES) com PAC base de R$ 15,00 para consistência
+  let basePac = 15.0;
+  let baseSedex = 25.0;
   let prazoPac = '3 a 5 dias úteis';
   let prazoSedex = '1 a 2 dias úteis';
 
-  if (uf === 'SP') {
+  if (['SP', 'RJ', 'MG', 'ES'].includes(uf)) {
     basePac = 15.0;
-    baseSedex = 24.0;
-    prazoPac = '2 a 4 dias úteis';
-    prazoSedex = '1 dia útil';
-  } else if (['RJ', 'MG', 'ES'].includes(uf)) {
-    basePac = 20.0;
-    baseSedex = 34.0;
-    prazoPac = '4 a 6 dias úteis';
-    prazoSedex = '2 a 3 dias úteis';
+    baseSedex = 25.0;
+    prazoPac = uf === 'SP' ? '2 a 4 dias úteis' : '3 a 5 dias úteis';
+    prazoSedex = uf === 'SP' ? '1 dia útil' : '2 a 3 dias úteis';
   } else if (['PR', 'SC', 'RS'].includes(uf)) {
-    basePac = 24.0;
-    baseSedex = 40.0;
-    prazoPac = '5 a 7 dias úteis';
+    basePac = 22.0;
+    baseSedex = 38.0;
+    prazoPac = '4 a 6 dias úteis';
     prazoSedex = '2 a 4 dias úteis';
   } else if (['MS', 'MT', 'GO', 'DF'].includes(uf)) {
-    basePac = 26.0;
-    baseSedex = 44.0;
-    prazoPac = '5 a 8 dias úteis';
+    basePac = 25.0;
+    baseSedex = 42.0;
+    prazoPac = '5 a 7 dias úteis';
     prazoSedex = '3 a 4 dias úteis';
   } else if (['BA', 'PE', 'CE', 'MA', 'PB', 'RN', 'AL', 'SE', 'PI'].includes(uf)) {
-    basePac = 32.0;
-    baseSedex = 54.0;
-    prazoPac = '7 a 10 dias úteis';
+    basePac = 28.0;
+    baseSedex = 50.0;
+    prazoPac = '6 a 9 dias úteis';
     prazoSedex = '3 a 5 dias úteis';
   } else {
     // Região Norte
-    basePac = 36.0;
-    baseSedex = 62.0;
-    prazoPac = '8 a 14 dias úteis';
+    basePac = 32.0;
+    baseSedex = 58.0;
+    prazoPac = '7 a 12 dias úteis';
     prazoSedex = '4 a 6 dias úteis';
   }
 
-  // 3. Adicional de peso para embalagem reforçada de cerâmica frágil (acima de 1 kg)
-  const kgExcedente = Math.max(0, pesoTotalKg - 1.0);
-  const acrescimoPesoPac = kgExcedente * 4.5;
-  const acrescimoPesoSedex = kgExcedente * 7.5;
+  // 3. Adicional de peso para embalagem reforçada de cerâmica frágil (apenas acima de 2.0 kg)
+  const kgExcedente = Math.max(0, pesoTotalKg - 2.0);
+  const acrescimoPesoPac = kgExcedente * 4.0;
+  const acrescimoPesoSedex = kgExcedente * 7.0;
 
   const valorPac = Number((basePac + acrescimoPesoPac).toFixed(2));
   const valorSedex = Number((baseSedex + acrescimoPesoSedex).toFixed(2));
@@ -189,6 +185,93 @@ export async function calcularOpcoesFrete(
         valor: valorSedex,
         prazoDias: prazoSedex,
         cidade,
+        uf,
+        pesoTotalKg,
+      },
+    ],
+  };
+}
+
+/**
+ * Versão síncrona imediata para evitar flashes e recálculos assíncronos na renderização
+ */
+export function calcularOpcoesFreteSincrono(
+  cep: string,
+  itens: Array<{ peso?: number; quantidade: number }>,
+  ufInformada: string = 'SP'
+): CotacaoFreteResultado {
+  const cepLimpo = cep.replace(/\D/g, '') || '01310100';
+  const uf = ufInformada ? ufInformada.toUpperCase() : inferirUfPorCep(cepLimpo);
+
+  const pesoTotalGramas = itens.reduce((acc, item) => {
+    const pesoItem = item.peso && item.peso > 0 ? item.peso : 500;
+    return acc + pesoItem * (item.quantidade || 1);
+  }, 0);
+
+  const pesoTotalKg = Math.max(0.3, Number((pesoTotalGramas / 1000).toFixed(2)));
+
+  let basePac = 15.0;
+  let baseSedex = 25.0;
+  let prazoPac = '3 a 5 dias úteis';
+  let prazoSedex = '1 a 2 dias úteis';
+
+  if (['SP', 'RJ', 'MG', 'ES'].includes(uf)) {
+    basePac = 15.0;
+    baseSedex = 25.0;
+    prazoPac = uf === 'SP' ? '2 a 4 dias úteis' : '3 a 5 dias úteis';
+    prazoSedex = uf === 'SP' ? '1 dia útil' : '2 a 3 dias úteis';
+  } else if (['PR', 'SC', 'RS'].includes(uf)) {
+    basePac = 22.0;
+    baseSedex = 38.0;
+    prazoPac = '4 a 6 dias úteis';
+    prazoSedex = '2 a 4 dias úteis';
+  } else if (['MS', 'MT', 'GO', 'DF'].includes(uf)) {
+    basePac = 25.0;
+    baseSedex = 42.0;
+    prazoPac = '5 a 7 dias úteis';
+    prazoSedex = '3 a 4 dias úteis';
+  } else if (['BA', 'PE', 'CE', 'MA', 'PB', 'RN', 'AL', 'SE', 'PI'].includes(uf)) {
+    basePac = 28.0;
+    baseSedex = 50.0;
+    prazoPac = '6 a 9 dias úteis';
+    prazoSedex = '3 a 5 dias úteis';
+  } else {
+    basePac = 32.0;
+    baseSedex = 58.0;
+    prazoPac = '7 a 12 dias úteis';
+    prazoSedex = '4 a 6 dias úteis';
+  }
+
+  const kgExcedente = Math.max(0, pesoTotalKg - 2.0);
+  const acrescimoPesoPac = kgExcedente * 4.0;
+  const acrescimoPesoSedex = kgExcedente * 7.0;
+
+  const valorPac = Number((basePac + acrescimoPesoPac).toFixed(2));
+  const valorSedex = Number((baseSedex + acrescimoPesoSedex).toFixed(2));
+
+  return {
+    cep: cepLimpo,
+    cidade: uf === 'SP' ? 'São Paulo' : 'Região de Entrega',
+    uf,
+    pesoTotalKg,
+    opcoes: [
+      {
+        id: 'PAC',
+        nome: 'PAC (Econômico)',
+        descricao: 'Entrega padrão com embalagem reforçada para cerâmica',
+        valor: valorPac,
+        prazoDias: prazoPac,
+        cidade: uf === 'SP' ? 'São Paulo' : 'Região de Entrega',
+        uf,
+        pesoTotalKg,
+      },
+      {
+        id: 'SEDEX',
+        nome: 'SEDEX (Expresso)',
+        descricao: 'Entrega rápida prioritária com seguro antiquebra',
+        valor: valorSedex,
+        prazoDias: prazoSedex,
+        cidade: uf === 'SP' ? 'São Paulo' : 'Região de Entrega',
         uf,
         pesoTotalKg,
       },

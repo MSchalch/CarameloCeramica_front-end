@@ -7,8 +7,7 @@ import type { Cliente, CartaoCredito, Endereco } from '../../types/customer';
 import type { Pedido, ItemPedido, PagamentoPedido, Cupom } from '../../types/order';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  calcularOpcoesFrete,
-  type OpcaoFrete,
+  calcularOpcoesFreteSincrono,
   type CotacaoFreteResultado,
 } from '../../services/shippingService';
 
@@ -138,58 +137,53 @@ const Checkout = () => {
   const totalItensQtd = items.reduce((acc, item) => acc + item.quantidade, 0);
   const subtotal = items.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
 
-  // Cotação com Opções PAC e SEDEX por endereço e peso (RF0034 - Opção 1)
-  const [cotacaoCheckout, setCotacaoCheckout] = useState<CotacaoFreteResultado | null>(null);
-  const [modalidadeFrete, setModalidadeFrete] = useState<'PAC' | 'SEDEX'>('PAC');
-  const [freteManual, setFreteManual] = useState<number | null>(null);
+  // Inicialização estável e imediata do frete vindo do carrinho (RF0034)
+  const freteSalvoInfo = (() => {
+    try {
+      const salva = localStorage.getItem('caramelo_frete_opcao');
+      if (salva) return JSON.parse(salva);
+    } catch {}
+    return null;
+  })();
+
+  const [modalidadeFrete, setModalidadeFrete] = useState<'PAC' | 'SEDEX'>(
+    freteSalvoInfo?.opcao?.id || 'PAC'
+  );
+  const [freteManual, setFreteManual] = useState<number>(() => {
+    if (freteSalvoInfo?.opcao?.valor) {
+      return Number(freteSalvoInfo.opcao.valor);
+    }
+    return 15.0; // Padrão PAC Sudeste estável
+  });
+
+  const [cotacaoCheckout, setCotacaoCheckout] = useState<CotacaoFreteResultado | null>(() => {
+    if (freteSalvoInfo?.opcao) {
+      return {
+        cep: freteSalvoInfo.cep || '01310-100',
+        cidade: freteSalvoInfo.cidade || 'São Paulo',
+        uf: freteSalvoInfo.uf || 'SP',
+        pesoTotalKg: freteSalvoInfo.opcao.pesoTotalKg || 0.5,
+        opcoes: [freteSalvoInfo.opcao],
+      };
+    }
+    return null;
+  });
 
   const enderecoSelecionado = currentCustomer?.enderecos?.find((e) => e.id === selectedAddressId);
 
-  // Recupera opção vinda do carrinho se houver
-  useEffect(() => {
-    const salva = localStorage.getItem('caramelo_frete_opcao');
-    if (salva) {
-      try {
-        const parsed = JSON.parse(salva);
-        if (parsed.opcao?.id) {
-          setModalidadeFrete(parsed.opcao.id);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, []);
-
-  // Recalcula cotação ao alterar endereço ou itens
+  // Recalcula cotação de forma síncrona/imediata ao alterar endereço de entrega ou modalidade
   useEffect(() => {
     if (items.length > 0) {
-      const cep = enderecoSelecionado?.cep || '01310-100';
-      const uf = enderecoSelecionado?.estado || 'SP';
-      calcularOpcoesFrete(cep, items, uf).then((res) => {
-        setCotacaoCheckout(res);
-        const op = res.opcoes.find((o) => o.id === modalidadeFrete) || res.opcoes[0];
-        setFreteManual(op.valor);
-      });
+      const cep = enderecoSelecionado?.cep || freteSalvoInfo?.cep || '01310-100';
+      const uf = enderecoSelecionado?.estado || freteSalvoInfo?.uf || 'SP';
+      const res = calcularOpcoesFreteSincrono(cep, items, uf);
+      setCotacaoCheckout(res);
+      const op = res.opcoes.find((o) => o.id === modalidadeFrete) || res.opcoes[0];
+      setFreteManual(op.valor);
     }
-  }, [enderecoSelecionado?.id, enderecoSelecionado?.cep, enderecoSelecionado?.estado, items, modalidadeFrete]);
+  }, [selectedAddressId, enderecoSelecionado?.cep, enderecoSelecionado?.estado, items, modalidadeFrete]);
 
-  // Cálculo de Frete Dinâmico (RF0034) baseado na UF do endereço de entrega e na quantidade de itens
-  const calcularFretePorEndereco = (uf?: string) => {
-    if (items.length === 0) return 0;
-    const estado = (uf || 'SP').toUpperCase().trim();
-    let baseFrete = 15.0; // Sudeste padrão
-    if (['SP'].includes(estado)) baseFrete = 15.0;
-    else if (['RJ', 'MG', 'ES'].includes(estado)) baseFrete = 18.0;
-    else if (['PR', 'SC', 'RS'].includes(estado)) baseFrete = 22.0;
-    else if (['MS', 'MT', 'GO', 'DF'].includes(estado)) baseFrete = 25.0;
-    else if (['BA', 'PE', 'CE', 'MA', 'PB', 'RN', 'AL', 'SE', 'PI'].includes(estado)) baseFrete = 28.0;
-    else if (['AM', 'PA', 'RO', 'AC', 'RR', 'AP', 'TO'].includes(estado)) baseFrete = 32.0;
-
-    const adicionalItens = Math.max(0, totalItensQtd - 1) * 3.0;
-    return baseFrete + adicionalItens;
-  };
-
-  const frete = freteManual !== null ? freteManual : calcularFretePorEndereco(enderecoSelecionado?.estado);
+  const frete = freteManual;
   const opcaoFreteAtiva = cotacaoCheckout?.opcoes.find((o) => o.id === modalidadeFrete) || cotacaoCheckout?.opcoes[0];
   const desconto = cupomAplicado ? cupomAplicado.valor : 0.0;
   const valorComDescontoEFrete = Math.max(0, subtotal - desconto + frete);
