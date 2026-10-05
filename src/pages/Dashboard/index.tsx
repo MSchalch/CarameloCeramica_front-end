@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -69,6 +69,10 @@ const Dashboard: React.FC = () => {
 
   const handleFiltrar = (e: React.FormEvent) => {
     e.preventDefault();
+    if (dataInicio && dataFim && dataFim < dataInicio) {
+      alert('A data de fim não pode ser anterior à data de início (RF0056).');
+      return;
+    }
     carregarDados();
   };
 
@@ -171,6 +175,7 @@ const Dashboard: React.FC = () => {
                   type="date"
                   className="form-control"
                   value={dataFim}
+                  min={dataInicio}
                   onChange={(e) => setDataFim(e.target.value)}
                 />
               </div>
