@@ -71,6 +71,7 @@ const Home = () => {
                   name: product.nome,
                   price: Number(product.valorVenda || 0),
                   category: product.categoria,
+                  estoque: product.estoque ?? 10,
                   img:
                     product.imagemUrl ||
                     "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80",

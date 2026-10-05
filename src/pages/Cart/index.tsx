@@ -13,6 +13,8 @@ interface CartItem {
 
 const Cart = () => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [cepDestino, setCepDestino] = useState('');
+  const [freteCalculado, setFreteCalculado] = useState<number | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('caramelo_cart');
@@ -32,18 +34,42 @@ const Cart = () => {
 
   const handleQtyChange = (id: number, qty: number) => {
     if (qty < 1) return;
-    const updated = items.map(i => (i.id === id ? { ...i, quantidade: qty } : i));
+    const item = items.find((i) => i.id === id);
+    if (item && qty > item.estoque) {
+      alert(`Quantidade máxima disponível para '${item.nome}' é ${item.estoque} un. (RN0031)`);
+      qty = item.estoque;
+    }
+    const updated = items.map((i) => (i.id === id ? { ...i, quantidade: qty } : i));
     updateCart(updated);
   };
 
   const handleRemove = (id: number) => {
-    const updated = items.filter(i => i.id !== id);
+    const updated = items.filter((i) => i.id !== id);
     updateCart(updated);
   };
 
+  const totalItensQtd = items.reduce((acc, item) => acc + item.quantidade, 0);
+
+  // Critério de Frete (RF0034): Base R$ 15,00 + R$ 3,00 por item adicional selecionado
+  const calcularFreteCriterio = () => {
+    if (items.length === 0) return 0;
+    const base = 15.0;
+    const extra = Math.max(0, totalItensQtd - 1) * 3.0;
+    return base + extra;
+  };
+
+  const frete = freteCalculado !== null ? freteCalculado : calcularFreteCriterio();
   const subtotal = items.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
-  const freteFixo = items.length > 0 ? 25.00 : 0.00;
-  const total = subtotal + freteFixo;
+  const total = subtotal + frete;
+
+  const handleSimularFrete = () => {
+    if (cepDestino.replace(/\D/g, '').length !== 8) {
+      alert('Informe um CEP válido com 8 dígitos.');
+      return;
+    }
+    const val = calcularFreteCriterio();
+    setFreteCalculado(val);
+  };
 
   return (
     <div className="container py-5">
@@ -73,7 +99,7 @@ const Cart = () => {
                 {items.map((item, idx) => (
                   <div
                     key={item.id}
-                    className={`d-flex align-items-center py-3 ${
+                    className={`d-flex align-items-center py-3 item-carrinho ${
                       idx < items.length - 1 ? 'border-bottom' : ''
                     }`}
                   >
@@ -87,24 +113,24 @@ const Cart = () => {
                       style={{ width: 80, height: 80, objectFit: 'cover' }}
                     />
                     <div className="ms-3 flex-grow-1">
-                      <h5 className="fw-bold mb-1">{item.nome}</h5>
+                      <h5 className="fw-bold mb-1 item-nome">{item.nome}</h5>
                       <span className="badge bg-light text-dark border mb-1">{item.categoria}</span>
                       <p className="text-muted mb-0 small">
-                        Estoque disponível: <strong>{item.estoque} un.</strong>
+                        Estoque disponível: <strong className="estoque-disponivel">{item.estoque} un.</strong>
                       </p>
                     </div>
                     <div className="d-flex align-items-center">
                       <input
                         type="number"
-                        className="form-control me-2 text-center"
-                        style={{ width: '70px' }}
+                        className="form-control me-2 text-center input-quantidade-carrinho"
+                        style={{ width: '75px' }}
                         value={item.quantidade}
                         min="1"
                         max={item.estoque || 99}
                         onChange={(e) => handleQtyChange(item.id, Number(e.target.value))}
                       />
                       <button
-                        className="btn btn-outline-danger btn-sm"
+                        className="btn btn-outline-danger btn-sm btn-remover-item"
                         onClick={() => handleRemove(item.id)}
                         title="Remover item"
                       >
@@ -112,7 +138,7 @@ const Cart = () => {
                       </button>
                     </div>
                     <div className="ms-4 text-end" style={{ minWidth: '110px' }}>
-                      <span className="fw-bold fs-5 text-success">
+                      <span className="fw-bold fs-5 text-success item-subtotal">
                         R$ {(item.preco * item.quantidade).toFixed(2).replace('.', ',')}
                       </span>
                       <br />
@@ -124,6 +150,31 @@ const Cart = () => {
                 ))}
               </div>
             </div>
+
+            {/* Simulação de Frete (RF0034) */}
+            <div className="card shadow-sm border-0 mb-4">
+              <div className="card-body p-3">
+                <h6 className="fw-bold mb-2">
+                  <i className="bi bi-truck me-2 text-warning"></i>Simular Frete por CEP (RF0034)
+                </h6>
+                <div className="input-group" style={{ maxWidth: '350px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Digite seu CEP (Ex: 01310-100)"
+                    value={cepDestino}
+                    maxLength={9}
+                    onChange={(e) => setCepDestino(e.target.value)}
+                  />
+                  <button className="btn btn-outline-dark" type="button" onClick={handleSimularFrete}>
+                    Calcular
+                  </button>
+                </div>
+                <small className="text-muted d-block mt-2">
+                  * Critério de Frete: R$ 15,00 base + R$ 3,00 por item adicional selecionado.
+                </small>
+              </div>
+            </div>
           </div>
 
           <div className="col-lg-4">
@@ -131,19 +182,19 @@ const Cart = () => {
               <div className="card-body p-4">
                 <h5 className="card-title fw-bold mb-4">Resumo do Pedido</h5>
                 <div className="d-flex justify-content-between mb-2">
-                  <span className="text-muted">Subtotal ({items.length} itens)</span>
-                  <span className="fw-bold">R$ {subtotal.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-muted">Subtotal ({totalItensQtd} peças)</span>
+                  <span className="fw-bold resumo-subtotal">R$ {subtotal.toFixed(2).replace('.', ',')}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-3">
-                  <span className="text-muted">Frete Estimado</span>
-                  <span className="fw-bold">R$ {freteFixo.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-muted">Frete Calculado</span>
+                  <span className="fw-bold resumo-frete">R$ {frete.toFixed(2).replace('.', ',')}</span>
                 </div>
                 <hr />
                 <div className="d-flex justify-content-between mb-4 fw-bold fs-5 text-dark">
                   <span>Total</span>
-                  <span className="text-success">R$ {total.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-success resumo-total">R$ {total.toFixed(2).replace('.', ',')}</span>
                 </div>
-                <Link to="/checkout" className="btn btn-warning w-100 fw-bold py-2 shadow-sm">
+                <Link to="/checkout" className="btn btn-warning w-100 fw-bold py-2 shadow-sm btn-iniciar-compra">
                   Continuar para o Pagamento <i className="bi bi-arrow-right ms-1"></i>
                 </Link>
               </div>
