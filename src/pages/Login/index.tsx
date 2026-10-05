@@ -60,6 +60,15 @@ const Login: React.FC = () => {
             </div>
           )}
 
+          {((location.state as any)?.from?.pathname === '/checkout' || (location.state as any)?.message) && (
+            <div className="alert alert-warning py-2 small d-flex align-items-center mb-3 aviso-login-checkout" role="alert">
+              <i className="bi bi-cart-check-fill me-2 fs-5 text-warning"></i>
+              <div>
+                <strong>Atenção:</strong> Faça login para finalizar a compra do seu pedido. Os itens do seu carrinho estão preservados!
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
               <label htmlFor="loginInput" className="form-label fw-semibold">Usuário ou E-mail</label>

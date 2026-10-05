@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface CartItem {
   id: number;
@@ -12,9 +13,24 @@ interface CartItem {
 }
 
 const Cart = () => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState<CartItem[]>([]);
   const [cepDestino, setCepDestino] = useState('');
   const [freteCalculado, setFreteCalculado] = useState<number | null>(null);
+
+  const handleFinalizarCompra = () => {
+    if (!isAuthenticated) {
+      navigate('/login', {
+        state: {
+          from: { pathname: '/checkout' },
+          message: 'Faça login para finalizar a compra do seu pedido. Seus itens foram mantidos no carrinho!'
+        }
+      });
+      return;
+    }
+    navigate('/checkout');
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('caramelo_cart');
@@ -194,9 +210,20 @@ const Cart = () => {
                   <span>Total</span>
                   <span className="text-success resumo-total">R$ {total.toFixed(2).replace('.', ',')}</span>
                 </div>
-                <Link to="/checkout" className="btn btn-warning w-100 fw-bold py-2 shadow-sm btn-iniciar-compra">
-                  Continuar para o Pagamento <i className="bi bi-arrow-right ms-1"></i>
-                </Link>
+                <button
+                  type="button"
+                  onClick={handleFinalizarCompra}
+                  className="btn btn-warning w-100 fw-bold py-2 shadow-sm btn-iniciar-compra"
+                >
+                  {isAuthenticated ? 'Continuar para o Pagamento' : 'Fazer Login para Finalizar Compra'}{' '}
+                  <i className="bi bi-arrow-right ms-1"></i>
+                </button>
+                {!isAuthenticated && (
+                  <div className="alert alert-info p-2 small mt-3 mb-0 d-flex align-items-center aviso-login-carrinho">
+                    <i className="bi bi-info-circle-fill me-2 fs-6"></i>
+                    <span>Você não está conectado. Ao finalizar, solicitaremos seu login ou cadastro para entrega.</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
