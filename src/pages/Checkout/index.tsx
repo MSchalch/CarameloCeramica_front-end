@@ -114,7 +114,7 @@ const Checkout = () => {
                 nomeImpresso: primeiroCartao.nomeImpresso,
                 bandeira: primeiroCartao.bandeira,
                 codigoSeguranca: primeiroCartao.codigoSeguranca,
-                valor: 0,
+                valor: Number(saldoAPagarCartao.toFixed(2)),
                 salvarNoPerfil: false,
               },
             ]);
@@ -164,8 +164,13 @@ const Checkout = () => {
 
   // Atualizar valor do cartão automaticamente se houver apenas 1 cartão
   useEffect(() => {
-    if (cards.length === 1) {
-      setCards((prev) => [{ ...prev[0], valor: Number(saldoAPagarCartao.toFixed(2)) }]);
+    if (cards.length === 1 && saldoAPagarCartao > 0) {
+      setCards((prev) => {
+        if (prev.length === 1 && prev[0].valor !== Number(saldoAPagarCartao.toFixed(2))) {
+          return [{ ...prev[0], valor: Number(saldoAPagarCartao.toFixed(2)) }];
+        }
+        return prev;
+      });
     }
   }, [saldoAPagarCartao, cards.length]);
 
@@ -326,8 +331,8 @@ const Checkout = () => {
 
   const handleSelectExistingCard = (index: number, cardId: number) => {
     const card = currentCustomer?.cartoes?.find((c) => c.id === cardId);
+    const updated = [...cards];
     if (card) {
-      const updated = [...cards];
       updated[index] = {
         ...updated[index],
         cartaoId: card.id,
@@ -337,8 +342,18 @@ const Checkout = () => {
         codigoSeguranca: card.codigoSeguranca,
         salvarNoPerfil: false,
       };
-      setCards(updated);
+    } else {
+      updated[index] = {
+        ...updated[index],
+        cartaoId: undefined,
+        numero: '',
+        nomeImpresso: '',
+        bandeira: 'VISA',
+        codigoSeguranca: '',
+        salvarNoPerfil: true,
+      };
     }
+    setCards(updated);
   };
 
   // Finalizar Compra (RF0038)
@@ -360,6 +375,10 @@ const Checkout = () => {
 
     // Validação de pagamento no front
     if (saldoAPagarCartao > 0) {
+      if (cards.length === 1) {
+        cards[0].valor = Number(saldoAPagarCartao.toFixed(2));
+      }
+
       const somaCards = cards.reduce((acc, c) => acc + (c.valor || 0), 0);
       if (Math.abs(somaCards - saldoAPagarCartao) > 0.05) {
         alert(

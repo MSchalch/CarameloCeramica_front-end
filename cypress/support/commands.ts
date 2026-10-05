@@ -7,6 +7,11 @@ declare global {
        * Realiza login no sistema com a credencial padrão de Administrador
        */
       loginAdmin(): Chainable<void>;
+
+      /**
+       * Realiza login com cliente pré-cadastrado na base
+       */
+      loginCliente(email?: string, senha?: string): Chainable<void>;
     }
   }
 }
@@ -54,3 +59,13 @@ Cypress.Commands.add('loginAdmin', () => {
   // Aguarda autenticar e redirecionar para fora da página de login
   cy.url({ timeout: 10000 }).should('not.include', '/login');
 });
+
+Cypress.Commands.add('loginCliente', (email = 'marina.silva@email.com', senha = '123456') => {
+  cy.clearLocalStorage();
+  cy.visit('/login');
+  cy.get('input[name="login"]').clear().type(email);
+  cy.get('input[name="senha"]').clear().type(senha);
+  cy.get('button[type="submit"]').click();
+  cy.url({ timeout: 10000 }).should('not.include', '/login');
+});
+

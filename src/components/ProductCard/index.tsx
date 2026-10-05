@@ -101,11 +101,14 @@ const ProductCard = ({ product }: { product: Product }) => {
                   min={1}
                   max={estoqueDisponivel}
                   onChange={(e) => {
-                    const val = Number(e.target.value);
-                    if (val > estoqueDisponivel) {
-                      setQuantidade(estoqueDisponivel);
-                    } else if (val >= 1) {
-                      setQuantidade(val);
+                    const raw = e.target.value;
+                    if (raw === '') {
+                      setQuantidade(1);
+                      return;
+                    }
+                    const val = parseInt(raw, 10);
+                    if (!isNaN(val)) {
+                      setQuantidade(Math.max(1, Math.min(estoqueDisponivel, val)));
                     }
                   }}
                 />
