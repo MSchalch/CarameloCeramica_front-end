@@ -28,31 +28,39 @@ const CORES_PALETA = [
 const Dashboard: React.FC = () => {
   const [carregando, setCarregando] = useState<boolean>(true);
   const [dados, setDados] = useState<DashboardData | null>(null);
+  const [tempoRespostaMs, setTempoRespostaMs] = useState<number>(0);
 
-  // Estados dos filtros
+  // Estados dos filtros (padrão: últimos 6 meses agrupados por mês/ano - MM/yyyy)
   const hoje = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const trintaDiasAtras = useMemo(() => {
+  const seisMesesAtras = useMemo(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 30);
+    d.setMonth(d.getMonth() - 5);
+    d.setDate(1);
     return d.toISOString().split('T')[0];
   }, []);
 
-  const [dataInicio, setDataInicio] = useState<string>(trintaDiasAtras);
+  const [dataInicio, setDataInicio] = useState<string>(seisMesesAtras);
   const [dataFim, setDataFim] = useState<string>(hoje);
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<string[]>([]);
 
-  const carregarDados = async () => {
+  const carregarDados = async (overrideInicio?: string, overrideFim?: string, overrideCats?: string[]) => {
     setCarregando(true);
+    const t0 = performance.now();
     try {
+      const ini = overrideInicio !== undefined ? overrideInicio : dataInicio;
+      const fim = overrideFim !== undefined ? overrideFim : dataFim;
+      const cats = overrideCats !== undefined ? overrideCats : categoriasSelecionadas;
       const resp = await dashboardService.obterDados({
-        dataInicio: dataInicio || undefined,
-        dataFim: dataFim || undefined,
-        categorias: categoriasSelecionadas.length > 0 ? categoriasSelecionadas : undefined,
+        dataInicio: ini || undefined,
+        dataFim: fim || undefined,
+        categorias: cats.length > 0 ? cats : undefined,
       });
+      const elapsed = Math.max(1, Math.round(performance.now() - t0));
+      setTempoRespostaMs(elapsed);
       setDados(resp);
 
       // Se for a primeira carga e ainda não tiver categorias selecionadas, seleciona todas por padrão
-      if (categoriasSelecionadas.length === 0 && resp.categoriasDisponiveis?.length > 0) {
+      if (cats.length === 0 && resp.categoriasDisponiveis?.length > 0) {
         setCategoriasSelecionadas(resp.categoriasDisponiveis);
       }
     } catch (err) {
@@ -171,7 +179,7 @@ const Dashboard: React.FC = () => {
                 </label>
                 <input
                   type="date"
-                  className="form-control"
+                  className="form-control input-data-inicio-dashboard"
                   value={dataInicio}
                   onChange={(e) => setDataInicio(e.target.value)}
                 />
@@ -182,14 +190,14 @@ const Dashboard: React.FC = () => {
                 </label>
                 <input
                   type="date"
-                  className="form-control"
+                  className="form-control input-data-fim-dashboard"
                   value={dataFim}
                   min={dataInicio}
                   onChange={(e) => setDataFim(e.target.value)}
                 />
               </div>
               <div className="col-12 col-md-4 d-flex gap-2">
-                <button type="submit" className="btn btn-primary flex-grow-1" style={{ backgroundColor: '#426B69', borderColor: '#426B69' }}>
+                <button type="submit" className="btn btn-primary flex-grow-1 btn-aplicar-filtros-dashboard" style={{ backgroundColor: '#426B69', borderColor: '#426B69' }}>
                   <i className="bi bi-funnel me-2"></i>Aplicar Filtros
                 </button>
               </div>
@@ -318,15 +326,19 @@ const Dashboard: React.FC = () => {
 
       {/* Gráfico de Linhas por Categoria */}
       <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '12px' }}>
-        <div className="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+        <div className="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div>
             <h5 className="fw-bold mb-0" style={{ color: '#426B69' }}>
-              <i className="bi bi-graph-up me-2"></i>Evolução de Vendas por Categoria (Gráfico de Linhas)
+              <i className="bi bi-graph-up me-2"></i>Evolução de Vendas por Categoria (Gráfico de Linhas - RNF0043)
             </h5>
             <small className="text-muted">
-              Uma linha para cada categoria selecionada ao longo do período
+              Vendas com status <strong>ENTREGUE</strong> agrupadas por mês/ano (MM/yyyy) em Reais (R$)
             </small>
           </div>
+          <span className="badge bg-success-subtle text-success border border-success-subtle badge-tempo-resposta-dashboard">
+            <i className="bi bi-lightning-charge-fill me-1"></i>
+            Tempo de resposta (RNF0011): {tempoRespostaMs} ms (&le; 1000 ms)
+          </span>
         </div>
         <div className="card-body" style={{ minHeight: '420px' }}>
           {carregando ? (
@@ -389,6 +401,50 @@ const Dashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Tabela de Detalhamento Mensal por Categoria (Rastreabilidade com a base de vendas ENTREGUE) */}
+      {dados?.dadosGraficoLinhas && dados.dadosGraficoLinhas.length > 0 && (
+        <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '12px' }}>
+          <div className="card-header bg-white py-3 border-0">
+            <h6 className="fw-bold mb-0" style={{ color: '#426B69' }}>
+              <i className="bi bi-table me-2"></i>Valores Mensais Consolidados por Categoria (Somente Compras ENTREGUE)
+            </h6>
+          </div>
+          <div className="card-body pt-0">
+            <div className="table-responsive">
+              <table className="table table-sm table-hover align-middle mb-0 tabela-historico-mensal">
+                <thead className="table-light">
+                  <tr>
+                    <th>Mês/Ano</th>
+                    {categoriasExibicao.map((cat) => (
+                      <th key={cat} className="text-end">
+                        {cat}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {dados.dadosGraficoLinhas.map((linha, idx) => (
+                    <tr key={idx} className="linha-mes-dashboard" data-mes={String(linha.data)}>
+                      <td className="fw-bold text-secondary celula-mes-ano">{String(linha.data)}</td>
+                      {categoriasExibicao.map((cat) => (
+                        <td
+                          key={cat}
+                          className="text-end fw-semibold celula-valor-categoria"
+                          data-categoria={cat}
+                          data-valor={Number(linha[cat] || 0).toFixed(2)}
+                        >
+                          {formatarMoeda(Number(linha[cat] || 0))}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
