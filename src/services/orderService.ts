@@ -29,4 +29,9 @@ export const orderService = {
     const response = await api.get<Cupom>(`/cupons/validar/${codigo}`);
     return response.data;
   },
+
+  listarCuponsCliente: async (clienteId: number): Promise<Cupom[]> => {
+    const response = await api.get<Cupom[]>(`/cupons/cliente/${clienteId}`);
+    return response.data;
+  },
 };

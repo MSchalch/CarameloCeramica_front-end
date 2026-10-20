@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { cartService } from '../../services/cartService';
 
 const Login: React.FC = () => {
   const [loginIdentificador, setLoginIdentificador] = useState('');
@@ -28,8 +29,17 @@ const Login: React.FC = () => {
         senha: senha.trim(),
       });
 
-      // Redirecionamento condicional de acordo com o perfil
+      // Gerenciar migração do carrinho:
+      // Se veio do checkout (visitante autenticando para concluir pedido), migra o carrinho.
+      // Caso contrário (login normal ou primeira vez), limpa resíduos de visitantes anteriores.
       const from = (location.state as any)?.from?.pathname;
+      if (from === '/checkout') {
+        cartService.migrarCarrinhoGuestParaUsuario(usuario.id);
+      } else {
+        cartService.limparCarrinhoGuest();
+      }
+
+      // Redirecionamento condicional de acordo com o perfil
       if (usuario.perfil === 'ADMIN') {
         navigate(from && from.startsWith('/admin') ? from : '/dashboard', { replace: true });
       } else {

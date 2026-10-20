@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Usuario, LoginCredentials } from '../types/auth';
 import { authService } from '../services/authService';
+import { cartService } from '../services/cartService';
 
 interface AuthContextType {
   user: Usuario | null;
@@ -43,6 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem(USER_STORAGE_KEY);
+    cartService.clearCart();
   };
 
   const isAuthenticated = !!user;

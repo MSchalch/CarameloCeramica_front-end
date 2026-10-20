@@ -45,16 +45,13 @@ const AdminOrders = () => {
 
   const statusOptions = [
     'EM PROCESSAMENTO',
-    'PAGAMENTO REALIZADO',
-    'EM TRÂNSITO',
+    'APROVADA',
+    'REPROVADA',
+    'EM TRANSPORTE',
     'ENTREGUE',
-    'TROCA SOLICITADA',
-    'TROCA ACEITA',
-    'TROCA NEGADA',
-    'ITEM ENVIADO',
-    'ITEM RECEBIDO',
-    'TROCA PROCESSADA',
-    'CANCELADO',
+    'EM TROCA',
+    'TROCA AUTORIZADA',
+    'TROCADO',
   ];
 
   return (
@@ -66,7 +63,7 @@ const AdminOrders = () => {
         </div>
         <div className="d-flex gap-2">
           <select
-            className="form-select"
+            className="form-select select-filtro-status-admin"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -77,7 +74,7 @@ const AdminOrders = () => {
               </option>
             ))}
           </select>
-          <button className="btn btn-outline-dark" onClick={fetchOrders}>
+          <button className="btn btn-outline-dark btn-atualizar-pedidos-admin" onClick={fetchOrders}>
             <i className="bi bi-arrow-clockwise me-1"></i>Atualizar
           </button>
         </div>
@@ -92,7 +89,7 @@ const AdminOrders = () => {
             </div>
           ) : (
             <div className="table-responsive">
-              <table className="table table-hover align-middle">
+              <table className="table table-hover align-middle tabela-pedidos-admin">
                 <thead className="table-light">
                   <tr>
                     <th>Código Pedido</th>
@@ -100,13 +97,13 @@ const AdminOrders = () => {
                     <th>Data</th>
                     <th>Total</th>
                     <th>Status Atual / Atualizar</th>
-                    <th className="text-end">Ações</th>
+                    <th className="text-end">Ações do Fluxo</th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.map((order) => (
-                    <tr key={order.id}>
-                      <td className="fw-bold text-muted">
+                    <tr key={order.id} className="linha-pedido-admin">
+                      <td className="fw-bold text-muted codigo-pedido-admin">
                         #{order.codigoPedido || order.id}
                       </td>
                       <td className="fw-bold">{order.cliente?.nome || 'Cliente'}</td>
@@ -120,7 +117,7 @@ const AdminOrders = () => {
                       </td>
                       <td>
                         <select
-                          className="form-select form-select-sm shadow-none select-status-width"
+                          className="form-select form-select-sm shadow-none select-status-width select-status-pedido-admin"
                           value={order.status}
                           onChange={(e) => handleStatusChange(order.id!, e.target.value)}
                         >
@@ -132,13 +129,51 @@ const AdminOrders = () => {
                         </select>
                       </td>
                       <td className="text-end">
-                        <button
-                          className="btn btn-sm btn-outline-dark"
-                          title="Ver Detalhes do Pedido"
-                          onClick={() => setSelectedOrder(order)}
-                        >
-                          <i className="bi bi-eye me-1"></i>Detalhes
-                        </button>
+                        <div className="d-inline-flex gap-1 flex-wrap justify-content-end">
+                          {order.status === 'APROVADA' && (
+                            <button
+                              className="btn btn-sm btn-primary fw-semibold btn-despachar-pedido"
+                              onClick={() => handleStatusChange(order.id!, 'EM TRANSPORTE')}
+                              title="Despachar pedido (RF0038 / RN0039)"
+                            >
+                              <i className="bi bi-truck me-1"></i>Despachar
+                            </button>
+                          )}
+                          {order.status === 'EM TRANSPORTE' && (
+                            <button
+                              className="btn btn-sm btn-success fw-semibold btn-confirmar-entrega"
+                              onClick={() => handleStatusChange(order.id!, 'ENTREGUE')}
+                              title="Confirmar entrega (RF0039 / RN0040)"
+                            >
+                              <i className="bi bi-check2-circle me-1"></i>Confirmar Entrega
+                            </button>
+                          )}
+                          {order.status === 'EM TROCA' && (
+                            <button
+                              className="btn btn-sm btn-warning fw-bold text-dark btn-autorizar-troca"
+                              onClick={() => handleStatusChange(order.id!, 'TROCA AUTORIZADA')}
+                              title="Autorizar solicitação de troca e notificar cliente (RF0041 / RNF0046)"
+                            >
+                              <i className="bi bi-shield-check me-1"></i>Autorizar Troca
+                            </button>
+                          )}
+                          {order.status === 'TROCA AUTORIZADA' && (
+                            <button
+                              className="btn btn-sm btn-success fw-bold btn-confirmar-recebimento-troca"
+                              onClick={() => handleStatusChange(order.id!, 'TROCADO')}
+                              title="Confirmar recebimento dos itens, gerar cupom e retornar ao estoque (RF0043 / RF0044 / RF0054)"
+                            >
+                              <i className="bi bi-box-arrow-in-down me-1"></i>Confirmar Recebimento
+                            </button>
+                          )}
+                          <button
+                            className="btn btn-sm btn-outline-dark btn-detalhes-pedido-admin"
+                            title="Ver Detalhes do Pedido"
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            <i className="bi bi-eye me-1"></i>Detalhes
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -4,7 +4,9 @@ import CustomerForm from '../../components/CustomerForm';
 import AddressModal from '../../components/AddressModal';
 import CardModal from '../../components/CardModal';
 import { customerService } from '../../services/customerService';
+import { orderService } from '../../services/orderService';
 import type { Cliente, Endereco, CartaoCredito } from '../../types/customer';
+import type { Cupom } from '../../types/order';
 import { useAuth } from '../../contexts/AuthContext';
 
 const UserProfile = () => {
@@ -13,6 +15,7 @@ const UserProfile = () => {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [currentCustomer, setCurrentCustomer] = useState<Cliente | null>(null);
+  const [meusCuponsTroca, setMeusCuponsTroca] = useState<Cupom[]>([]);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
@@ -20,14 +23,22 @@ const UserProfile = () => {
   const loadProfile = async () => {
     setLoading(true);
     try {
+      let fullCustomer: Cliente | null = null;
       if (user?.clienteId) {
-        const fullCustomer = await customerService.buscarPorId(user.clienteId);
-        setCurrentCustomer(fullCustomer);
+        fullCustomer = await customerService.buscarPorId(user.clienteId);
       } else {
         const data = await customerService.listarClientes('', 0, 1);
         if (data.content && data.content.length > 0) {
-          const fullCustomer = await customerService.buscarPorId(data.content[0].id!);
-          setCurrentCustomer(fullCustomer);
+          fullCustomer = await customerService.buscarPorId(data.content[0].id!);
+        }
+      }
+      if (fullCustomer) {
+        setCurrentCustomer(fullCustomer);
+        if (fullCustomer.id) {
+          try {
+            const cupons = await orderService.listarCuponsCliente(fullCustomer.id);
+            setMeusCuponsTroca(cupons.filter((c) => c.tipo === 'TROCA'));
+          } catch {}
         }
       }
     } catch (err: any) {
@@ -364,12 +375,36 @@ const UserProfile = () => {
 
               {activeTab === 'cupons' && (
                 <div>
-                  <h3 className="fw-bold mb-4">Meus Cupons</h3>
+                  <h3 className="fw-bold mb-4">Meus Cupons (RF0044)</h3>
+                  {meusCuponsTroca.length > 0 && (
+                    <div className="mb-4">
+                      <h6 className="fw-bold text-success mb-2">Cupons de Troca Emitidos:</h6>
+                      {meusCuponsTroca.map((c) => (
+                        <div
+                          key={c.id || c.codigo}
+                          className={`alert ${
+                            c.ativo ? 'alert-success' : 'alert-secondary'
+                          } d-flex justify-content-between align-items-center mb-2`}
+                        >
+                          <div>
+                            <strong className="font-monospace me-2">{c.codigo}</strong>
+                            <span className="badge bg-dark me-2">
+                              R$ {Number(c.valor).toFixed(2).replace('.', ',')}
+                            </span>
+                            <span className={`badge ${c.ativo ? 'bg-success' : 'bg-secondary'}`}>
+                              {c.ativo ? 'Ativo para Uso' : 'Já Utilizado'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <h6 className="fw-bold text-muted mb-2">Cupons Promocionais:</h6>
                   <div className="alert alert-success d-flex align-items-center" role="alert">
                     <i className="bi bi-ticket-perforated-fill fs-3 me-3"></i>
                     <div>
                       <h6 className="alert-heading fw-bold mb-1">BEMVINDO10</h6>
-                      <p className="mb-0 small">10% de desconto na primeira compra. Válido até 31/12/2026.</p>
+                      <p className="mb-0 small">R$ 10,00 de desconto na compra. Válido até 31/12/2027.</p>
                     </div>
                   </div>
                 </div>

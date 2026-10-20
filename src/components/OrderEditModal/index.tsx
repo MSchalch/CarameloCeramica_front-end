@@ -9,16 +9,13 @@ interface OrderEditModalProps {
 
 const statusOptions = [
   'EM PROCESSAMENTO',
-  'PAGAMENTO REALIZADO',
-  'EM TRÂNSITO',
+  'APROVADA',
+  'REPROVADA',
+  'EM TRANSPORTE',
   'ENTREGUE',
-  'TROCA SOLICITADA',
-  'TROCA ACEITA',
-  'TROCA NEGADA',
-  'ITEM ENVIADO',
-  'ITEM RECEBIDO',
-  'TROCA PROCESSADA',
-  'CANCELADO',
+  'EM TROCA',
+  'TROCA AUTORIZADA',
+  'TROCADO',
 ];
 
 const OrderEditModal = ({ show, onClose, order, onStatusChange }: OrderEditModalProps) => {
@@ -55,9 +52,16 @@ const OrderEditModal = ({ show, onClose, order, onStatusChange }: OrderEditModal
                 {order.itens && order.itens.length > 0 ? (
                   order.itens.map((item, idx) => (
                     <div key={idx} className="d-flex justify-content-between align-items-center mb-2">
-                      <span>
-                        {item.quantidade}x {item.peca?.nome || 'Peça de Cerâmica'}
-                      </span>
+                      <div>
+                        <span>
+                          {item.quantidade}x {item.peca?.nome || 'Peça de Cerâmica'}
+                        </span>
+                        {(item.quantidadeTroca ?? 0) > 0 && (
+                          <span className="badge bg-warning text-dark ms-2">
+                            Em troca: {item.quantidadeTroca} un.
+                          </span>
+                        )}
+                      </div>
                       <span className="fw-bold">
                         R$ {Number(item.valorTotal || 0).toFixed(2).replace('.', ',')}
                       </span>

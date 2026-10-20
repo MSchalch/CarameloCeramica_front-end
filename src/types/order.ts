@@ -16,6 +16,7 @@ export interface ItemPedido {
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
+  quantidadeTroca?: number;
 }
 
 export interface PagamentoPedido {

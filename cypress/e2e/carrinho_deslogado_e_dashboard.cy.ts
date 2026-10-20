@@ -63,8 +63,10 @@ describe('Fluxo de Usuário Deslogado no Carrinho e Validação do Dashboard', (
 
     // 1.9 Finaliza o pedido logado
     cy.get('.btn-confirmar-pedido').click();
+    cy.get('.modal-confirmacao-compra').should('be.visible');
+    cy.get('.btn-autorizar-pagamento').click();
     cy.url({ timeout: 10000 }).should('include', '/profile/orders');
-    cy.contains('EM PROCESSAMENTO').should('be.visible');
+    cy.contains('APROVADA', { timeout: 10000 }).should('be.visible');
   });
 
   it('2. Validação das funcionalidades e métricas do Dashboard com dados históricos da Migration V9', () => {

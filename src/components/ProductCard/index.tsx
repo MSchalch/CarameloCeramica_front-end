@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { cartService } from '../../services/cartService';
 
 interface Product {
   id: number;
@@ -33,8 +34,7 @@ const ProductCard = ({ product }: { product: Product }) => {
       return;
     }
 
-    const saved = localStorage.getItem('caramelo_cart');
-    let cart: any[] = saved ? JSON.parse(saved) : [];
+    const cart = [...cartService.getCart()];
 
     const existingIndex = cart.findIndex((i: any) => i.id === product.id);
     if (existingIndex >= 0) {
@@ -59,8 +59,7 @@ const ProductCard = ({ product }: { product: Product }) => {
       });
     }
 
-    localStorage.setItem('caramelo_cart', JSON.stringify(cart));
-    window.dispatchEvent(new Event('cartUpdated'));
+    cartService.saveCart(cart);
     navigate('/cart');
   };
 

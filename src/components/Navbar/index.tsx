@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { cartService } from '../../services/cartService';
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
@@ -10,22 +11,16 @@ const Navbar: React.FC = () => {
 
   const carregarQuantidadeCarrinho = () => {
     try {
-      const saved = localStorage.getItem('caramelo_cart');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          const total = parsed.reduce(
-            (acc: number, item: any) => acc + (Number(item.quantidade) || 1),
-            0
-          );
-          setCartCount(total);
-          return;
-        }
-      }
+      const items = cartService.getCart();
+      const total = items.reduce(
+        (acc: number, item: any) => acc + (Number(item.quantidade) || 1),
+        0
+      );
+      setCartCount(total);
     } catch (e) {
       console.error('Erro ao ler quantidade do carrinho na Navbar:', e);
+      setCartCount(0);
     }
-    setCartCount(0);
   };
 
   useEffect(() => {

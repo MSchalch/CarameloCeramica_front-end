@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { chatService } from '../../services/chatService';
 import { customerService } from '../../services/customerService';
+import { cartService } from '../../services/cartService';
 import type { ChatMensagem, PecaRecomendada } from '../../types/chat';
 import { useAuth } from '../../contexts/AuthContext';
 import './ChatbotCard.css';
@@ -120,8 +121,7 @@ const ChatbotCard: React.FC = () => {
   };
 
   const handleAddToCart = (peca: PecaRecomendada) => {
-    const saved = localStorage.getItem('caramelo_cart');
-    let cart: any[] = saved ? JSON.parse(saved) : [];
+    const cart = [...cartService.getCart()];
 
     const existingIndex = cart.findIndex((i: any) => i.id === peca.id);
     if (existingIndex >= 0) {
@@ -138,8 +138,7 @@ const ChatbotCard: React.FC = () => {
       });
     }
 
-    localStorage.setItem('caramelo_cart', JSON.stringify(cart));
-    window.dispatchEvent(new Event('cartUpdated'));
+    cartService.saveCart(cart);
     toast.success(`"${peca.nome}" adicionado ao carrinho!`, { position: 'bottom-right' });
   };
 
