@@ -6,6 +6,7 @@ import type { Peca } from "../../types/product";
 const Home = () => {
   const [products, setProducts] = useState<Peca[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -14,7 +15,7 @@ const Home = () => {
 
       try {
         const cat = selectedCategory === "all" ? "" : selectedCategory;
-        const data = await productService.listarPecas("", cat, 0, 40);
+        const data = await productService.listarPecas(searchTerm, cat, 0, 40);
         // Exibir apenas produtos ativos na vitrine
         const ativos = (data.content || []).filter((p) => p.ativo);
         setProducts(ativos);
@@ -26,7 +27,7 @@ const Home = () => {
     };
 
     fetchCatalog();
-  }, [selectedCategory]);
+  }, [selectedCategory, searchTerm]);
 
   return (
     <div className="container py-5">
@@ -40,20 +41,30 @@ const Home = () => {
         </p>
       </div>
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
         <h3 className="fw-bold mb-0">Nosso Catálogo</h3>
-        <select
-          className="form-select w-auto"
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-        >
-          <option value="all">Todas as Categorias</option>
-          <option value="Bowls">Bowls</option>
-          <option value="Pratos">Pratos</option>
-          <option value="Xícaras">Xícaras</option>
-          <option value="Vasos">Vasos</option>
-          <option value="Travessas">Travessas</option>
-        </select>
+        <div className="d-flex flex-wrap gap-2">
+          <input
+            type="text"
+            data-testid="home-search-input"
+            className="form-control w-auto"
+            placeholder="Buscar peça, argila, esmalte..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <select
+            className="form-select w-auto"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="all">Todas as Categorias</option>
+            <option value="Bowls">Bowls</option>
+            <option value="Pratos">Pratos</option>
+            <option value="Xícaras">Xícaras</option>
+            <option value="Vasos">Vasos</option>
+            <option value="Travessas">Travessas</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (

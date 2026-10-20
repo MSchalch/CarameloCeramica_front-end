@@ -34,6 +34,7 @@ export interface Cliente {
   senha?: string;
   ranking?: number;
   ativo?: boolean;
+  preferenciasEstilo?: string;
   dataCadastro?: string;
   enderecos: Endereco[];
   cartoes: CartaoCredito[];

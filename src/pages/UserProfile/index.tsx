@@ -61,6 +61,7 @@ const UserProfile = () => {
       ...currentCustomer,
       ...dadosAtualizados,
       id: currentCustomer.id,
+      preferenciasEstilo: dadosAtualizados.preferenciasEstilo ?? currentCustomer.preferenciasEstilo,
       enderecos: currentCustomer.enderecos || [],
       cartoes: currentCustomer.cartoes || [],
     };
@@ -257,6 +258,35 @@ const UserProfile = () => {
                     isEdit={true}
                     loading={loading}
                   />
+
+                  <div className="p-4 mt-4 bg-warning-subtle rounded border border-warning">
+                    <h5 className="fw-bold mb-2">
+                      <i className="bi bi-robot me-2"></i>Minhas Preferências para Recomendação com IA (RNF0044)
+                    </h5>
+                    <p className="text-muted small mb-2">
+                      Estilos, argilas, esmaltes e ocasiões de uso declarados e inferidos pelo histórico de compras para personalização do Caramelo Bot:
+                    </p>
+                    <textarea
+                      className="form-control mb-2"
+                      rows={2}
+                      value={currentCustomer.preferenciasEstilo || ''}
+                      onChange={(e) =>
+                        setCurrentCustomer({
+                          ...currentCustomer,
+                          preferenciasEstilo: e.target.value,
+                        })
+                      }
+                      placeholder="Ex: Estilo rústico, argila terracota, peças para café da manhã e caldos..."
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-warning fw-bold"
+                      onClick={() => handleUpdateProfile(currentCustomer)}
+                      disabled={loading}
+                    >
+                      Salvar Preferências de IA
+                    </button>
+                  </div>
 
                   <hr className="my-5" />
 

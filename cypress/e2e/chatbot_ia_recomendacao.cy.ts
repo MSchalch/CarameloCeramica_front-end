@@ -12,7 +12,7 @@ describe('Roteiro Presencial: Chatbot de Recomendação com IA Generativa (RNF00
   });
 
   it('1) Demonstração da integração com a IA generativa escolhida e justificativa da escolha (Critérios 3.b, 3.e, 4.a)', () => {
-    cy.visit('/shop');
+    cy.visit('/');
     cy.get('[data-testid="chatbot-toggle-btn"]').should('be.visible').click();
     cy.get('[data-testid="chatbot-window"]').should('be.visible');
 
@@ -33,7 +33,7 @@ describe('Roteiro Presencial: Chatbot de Recomendação com IA Generativa (RNF00
   });
 
   it('2) Recomendação personalizada para um cliente, coerente com seu histórico de compras e preferências (RNF0044 item 1)', () => {
-    cy.visit('/shop');
+    cy.visit('/');
     cy.get('[data-testid="chatbot-toggle-btn"]').click();
 
     // Seleciona Marina Lima Silva (ID 1 - Histórico: Caneca Rústica Caramelo, Tigela Bowl Terracota; Preferência: Café da Manhã e Caldos / Terracota)
@@ -81,7 +81,7 @@ describe('Roteiro Presencial: Chatbot de Recomendação com IA Generativa (RNF00
     });
 
     // Demonstra também na interface trocando para Lucas Mendes Oliveira (ID 2)
-    cy.visit('/shop');
+    cy.visit('/');
     cy.get('[data-testid="chatbot-toggle-btn"]').click();
     cy.get('[data-testid="chat-cliente-select"]').select('2');
     cy.get('[data-testid="chat-historico-cliente"]').should('contain.text', 'Vaso Decorativo Acabamento Shino');
@@ -99,7 +99,7 @@ describe('Roteiro Presencial: Chatbot de Recomendação com IA Generativa (RNF00
   });
 
   it('4) Ajuda na busca por produtos pelo chat (RNF0044 item 2)', () => {
-    cy.visit('/shop');
+    cy.visit('/');
     cy.get('[data-testid="chatbot-toggle-btn"]').click();
 
     cy.get('[data-testid="chat-input"]').type('Estou buscando peças de vaso ou cachepô para plantas até R$ 200');
@@ -112,7 +112,7 @@ describe('Roteiro Presencial: Chatbot de Recomendação com IA Generativa (RNF00
   });
 
   it('5) Resposta a dúvidas sobre produtos ou temas relacionados (forno, micro-ondas e argilas) (RNF0044 item 2)', () => {
-    cy.visit('/shop');
+    cy.visit('/');
     cy.get('[data-testid="chatbot-toggle-btn"]').click();
 
     cy.get('[data-testid="chat-input"]').type(
@@ -128,7 +128,7 @@ describe('Roteiro Presencial: Chatbot de Recomendação com IA Generativa (RNF00
   });
 
   it('6) Sugestão de conteúdos relevantes durante a conversa (RNF0044 item 2)', () => {
-    cy.visit('/shop');
+    cy.visit('/');
     cy.get('[data-testid="chatbot-toggle-btn"]').click();
 
     cy.get('[data-testid="chat-input"]').type('Sugira conteúdos e guias sobre mesa posta e conservação');
@@ -141,7 +141,7 @@ describe('Roteiro Presencial: Chatbot de Recomendação com IA Generativa (RNF00
   });
 
   it('7) Registro de avaliação da resposta pelo usuário no chat (👍 Útil / 👎 Não útil) (Critério 3.d, 4.d)', () => {
-    cy.visit('/shop');
+    cy.visit('/');
     cy.get('[data-testid="chatbot-toggle-btn"]').click();
 
     cy.get('[data-testid="chat-input"]').type('Quero recomendações de xícaras para café [TESTE-E2E]');
@@ -188,7 +188,7 @@ describe('Roteiro Presencial: Chatbot de Recomendação com IA Generativa (RNF00
     });
 
     // 4. Demonstra visualmente no modal de Treinamento & Fine-Tuning da UI
-    cy.visit('/shop');
+    cy.visit('/');
     cy.get('[data-testid="chatbot-toggle-btn"]').click();
     cy.get('[data-testid="btn-abrir-painel-treinamento"]').click();
 
