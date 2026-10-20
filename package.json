@@ -9,7 +9,9 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "cypress:vendas": "cypress run --spec cypress/e2e/compras_checkout.cy.ts",
+    "cypress:analise": "cypress run --spec cypress/e2e/analise_vendas_dashboard.cy.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",
