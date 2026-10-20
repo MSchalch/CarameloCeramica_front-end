@@ -39,6 +39,7 @@ export interface Pedido {
   valorTotal: number;
   cupomPromocional?: Cupom;
   enderecoEntregaId?: number;
+  retornarAoEstoque?: boolean;
   itens: ItemPedido[];
   pagamentos: PagamentoPedido[];
 }

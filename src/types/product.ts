@@ -24,4 +24,8 @@ export interface Peca {
   motivoAtivacao?: string;
   categoriaAtivacao?: string;
   categoriasAdicionais?: string[];
+  autorizacaoGerente?: boolean;
+  quantidadeEntrada?: number;
+  fornecedorEntrada?: string;
+  dataEntrada?: string;
 }

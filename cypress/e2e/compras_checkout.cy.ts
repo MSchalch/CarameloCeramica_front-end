@@ -224,6 +224,7 @@ describe('Roteiro Mínimo de Demonstração - Venda de Ponta a Ponta e Ciclo de 
 
     cy.url().should('include', '/cart');
     cy.get('.banner-bloqueio-carrinho').should('be.visible');
+    cy.get('.notificacao-expiracao-5min').should('be.visible');
     cy.get('.item-carrinho').should('have.length', 1);
     cy.get('.btn-iniciar-compra').should('not.be.disabled');
 
@@ -369,10 +370,11 @@ describe('Roteiro Mínimo de Demonstração - Venda de Ponta a Ponta e Ciclo de 
             .and('contain', codigoPedido)
             .and('contain', 'TROCA AUTORIZADA');
 
-          // Cenário 10.4: Administrador confirma recebimento dos itens (RF0043, RN0042 -> TROCADO)
+          // Cenário 10.4: Administrador confirma recebimento dos itens definindo se retornam ao estoque (RF0044, RN0042 -> TROCADO)
           cy.loginAdmin();
           cy.visit('/admin/orders');
           cy.contains('tr.linha-pedido-admin', codigoPedido).within(() => {
+            cy.get('.check-retornar-estoque-troca').should('be.checked');
             cy.get('.btn-confirmar-recebimento-troca').click();
           });
           cy.contains('tr.linha-pedido-admin', codigoPedido).within(() => {

@@ -66,8 +66,10 @@ const ProductEditModal = ({ show, onClose, product }: ProductEditModalProps) => 
       await productService.atualizarPeca({
         ...currentProduct,
         ativo: novoStatus,
-        motivoInativacao: !novoStatus ? 'Inativação via painel rápido' : undefined,
-        categoriaInativacao: !novoStatus ? 'GERENCIAL' : undefined,
+        motivoInativacao: !novoStatus ? (currentProduct.motivoInativacao || 'Inativação manual via painel administrativo') : currentProduct.motivoInativacao,
+        categoriaInativacao: !novoStatus ? (currentProduct.categoriaInativacao || 'DESCONTINUADA') : currentProduct.categoriaInativacao,
+        motivoAtivacao: novoStatus ? (currentProduct.motivoAtivacao || 'Reativação manual via painel administrativo') : currentProduct.motivoAtivacao,
+        categoriaAtivacao: novoStatus ? (currentProduct.categoriaAtivacao || 'REPOSICAO_CATALOGO') : currentProduct.categoriaAtivacao,
       });
       setFeedback({
         type: 'success',

@@ -8,6 +8,7 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
+  const [retornarEstoquePorPedido, setRetornarEstoquePorPedido] = useState<{ [orderId: number]: boolean }>({});
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -29,14 +30,18 @@ const AdminOrders = () => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
+    const deveRetornarEstoque =
+      retornarEstoquePorPedido[orderId] !== undefined ? retornarEstoquePorPedido[orderId] : true;
+
     try {
       await orderService.atualizarPedido({
         ...order,
         status: newStatus,
+        retornarAoEstoque: deveRetornarEstoque,
       });
       await fetchOrders();
       if (selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder({ ...selectedOrder, status: newStatus });
+        setSelectedOrder({ ...selectedOrder, status: newStatus, retornarAoEstoque: deveRetornarEstoque });
       }
     } catch (err: any) {
       alert('Erro ao alterar status: ' + (err.response?.data || err.message));
@@ -158,13 +163,32 @@ const AdminOrders = () => {
                             </button>
                           )}
                           {order.status === 'TROCA AUTORIZADA' && (
-                            <button
-                              className="btn btn-sm btn-success fw-bold btn-confirmar-recebimento-troca"
-                              onClick={() => handleStatusChange(order.id!, 'TROCADO')}
-                              title="Confirmar recebimento dos itens, gerar cupom e retornar ao estoque (RF0043 / RF0044 / RF0054)"
-                            >
-                              <i className="bi bi-box-arrow-in-down me-1"></i>Confirmar Recebimento
-                            </button>
+                            <div className="d-inline-flex align-items-center gap-2">
+                              <div className="form-check form-check-inline mb-0 small" title="RF0044: Definir se as peças devolvidas retornam ao estoque">
+                                <input
+                                  className="form-check-input check-retornar-estoque-troca"
+                                  type="checkbox"
+                                  id={`ret-est-${order.id}`}
+                                  checked={retornarEstoquePorPedido[order.id!] !== undefined ? retornarEstoquePorPedido[order.id!] : true}
+                                  onChange={(e) =>
+                                    setRetornarEstoquePorPedido((prev) => ({
+                                      ...prev,
+                                      [order.id!]: e.target.checked,
+                                    }))
+                                  }
+                                />
+                                <label className="form-check-label text-muted" htmlFor={`ret-est-${order.id}`}>
+                                  Retornar ao estoque (RF0044)
+                                </label>
+                              </div>
+                              <button
+                                className="btn btn-sm btn-success fw-bold btn-confirmar-recebimento-troca"
+                                onClick={() => handleStatusChange(order.id!, 'TROCADO')}
+                                title="Confirmar recebimento dos itens, gerar cupom e retornar ao estoque (RF0044 / RF0045 / RF0054)"
+                              >
+                                <i className="bi bi-box-arrow-in-down me-1"></i>Confirmar Recebimento
+                              </button>
+                            </div>
                           )}
                           <button
                             className="btn btn-sm btn-outline-dark btn-detalhes-pedido-admin"

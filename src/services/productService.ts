@@ -2,10 +2,24 @@ import api from './customerService';
 import type { Peca } from '../types/product';
 import type { PageResponse } from '../types/customer';
 
+export interface FiltroPecasParams {
+  tipoArgila?: string;
+  tipoEsmalte?: string;
+  grupoPrecificacao?: string;
+  vaiAoForno?: boolean;
+  vaiAoMicroondas?: boolean;
+}
+
 export const productService = {
-  listarPecas: async (termo = '', categoria = '', page = 0, size = 50): Promise<PageResponse<Peca>> => {
+  listarPecas: async (
+    termo = '',
+    categoria = '',
+    page = 0,
+    size = 50,
+    filtrosExtras?: FiltroPecasParams
+  ): Promise<PageResponse<Peca>> => {
     const response = await api.get<PageResponse<Peca>>('/pecas', {
-      params: { termo, categoria, page, size },
+      params: { termo, categoria, page, size, ...(filtrosExtras || {}) },
     });
     return response.data;
   },
@@ -22,6 +36,14 @@ export const productService = {
 
   atualizarPeca: async (peca: Peca): Promise<string> => {
     const response = await api.put<string>('/pecas', peca);
+    return response.data;
+  },
+
+  registrarEntradaEstoque: async (
+    id: number,
+    dados: { quantidadeEntrada: number; custo: number; fornecedorEntrada: string; dataEntrada: string }
+  ): Promise<string> => {
+    const response = await api.post<string>(`/pecas/${id}/entrada-estoque`, dados);
     return response.data;
   },
 

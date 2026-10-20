@@ -29,13 +29,32 @@ const ProductForm = ({ initialData, onSubmit, isEdit = false, loading = false }:
     estoque: 10,
     imagemUrl: '',
     ativo: true,
+    categoriasAdicionais: [],
+    autorizacaoGerente: false,
   });
+
+  const categoriasDisponiveis = ['Bowls', 'Pratos', 'Xícaras', 'Vasos', 'Travessas', 'Kits de Café'];
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        ...initialData,
+        categoriasAdicionais: initialData.categoriasAdicionais || [],
+        autorizacaoGerente: initialData.autorizacaoGerente || false,
+      });
     }
   }, [initialData]);
+
+  const handleToggleCategoriaAdicional = (cat: string) => {
+    setFormData((prev) => {
+      const atuais = prev.categoriasAdicionais || [];
+      const jaTem = atuais.includes(cat);
+      return {
+        ...prev,
+        categoriasAdicionais: jaTem ? atuais.filter((c) => c !== cat) : [...atuais, cat],
+      };
+    });
+  };
 
   // Recalcula o preço sugerido sempre que custo ou grupo mudam
   const calcularMargemPorGrupo = (grupo: string) => {
@@ -139,6 +158,31 @@ const ProductForm = ({ initialData, onSubmit, isEdit = false, loading = false }:
             <option value="Vasos">Vasos</option>
             <option value="Travessas">Travessas</option>
           </select>
+        </div>
+      </div>
+
+      {/* RN0012: Múltiplas categorias */}
+      <div className="mb-3">
+        <label className="form-label small fw-semibold text-secondary">
+          Categorias Adicionais (RN0012 - Múltiplas Categorias)
+        </label>
+        <div className="d-flex flex-wrap gap-3 p-2 bg-light rounded border">
+          {categoriasDisponiveis
+            .filter((c) => c !== formData.categoria)
+            .map((cat) => (
+              <div className="form-check mb-0" key={cat}>
+                <input
+                  className="form-check-input check-categoria-adicional"
+                  type="checkbox"
+                  id={`cat-adic-${cat}`}
+                  checked={(formData.categoriasAdicionais || []).includes(cat)}
+                  onChange={() => handleToggleCategoriaAdicional(cat)}
+                />
+                <label className="form-check-label small" htmlFor={`cat-adic-${cat}`}>
+                  {cat}
+                </label>
+              </div>
+            ))}
         </div>
       </div>
 
@@ -305,6 +349,34 @@ const ProductForm = ({ initialData, onSubmit, isEdit = false, loading = false }:
           />
         </div>
       </div>
+
+      {/* RN0014: Autorização de gerente quando valor de venda está abaixo da margem */}
+      {(() => {
+        const custoNum = Number(formData.custo || 0);
+        const margemNum = Number(formData.margemLucro || 30);
+        const precoMinimo = Number((custoNum * (1 + margemNum / 100)).toFixed(2));
+        const vendaAtual = Number(formData.valorVenda || 0);
+        if (custoNum > 0 && vendaAtual > 0 && vendaAtual < precoMinimo) {
+          return (
+            <div className="alert alert-warning py-2 px-3 mb-3 alerta-margem-gerente">
+              <div className="form-check mb-0">
+                <input
+                  className="form-check-input check-autorizacao-gerente"
+                  type="checkbox"
+                  id="autorizacaoGerente"
+                  name="autorizacaoGerente"
+                  checked={!!formData.autorizacaoGerente}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label small fw-bold text-dark" htmlFor="autorizacaoGerente">
+                  Autorização de Gerente (RN0014): Preço de venda (R$ {vendaAtual.toFixed(2).replace('.', ',')}) inferior ao mínimo da margem (R$ {precoMinimo.toFixed(2).replace('.', ',')}). Autorizar exceção gerencial.
+                </label>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       <div className="row mb-4">
         <div className="col-md-4">

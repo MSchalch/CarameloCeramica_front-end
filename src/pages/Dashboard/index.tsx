@@ -73,6 +73,15 @@ const Dashboard: React.FC = () => {
       alert('A data de fim não pode ser anterior à data de início (RF0056).');
       return;
     }
+    if (dataInicio && dataFim) {
+      const dIni = new Date(dataInicio);
+      const dFim = new Date(dataFim);
+      const diffDias = Math.round((dFim.getTime() - dIni.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDias > 735) {
+        alert('O período máximo de análise permitido é de 24 meses (RN0072).');
+        return;
+      }
+    }
     carregarDados();
   };
 

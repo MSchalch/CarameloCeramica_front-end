@@ -284,13 +284,19 @@ const Cart = () => {
       )}
 
       {items.length > 0 && (
-        <div className="alert alert-info py-2 px-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2 banner-bloqueio-carrinho">
+        <div className="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2 banner-bloqueio-carrinho">
           <div className="small">
             <i className="bi bi-shield-lock-fill me-2 text-primary"></i>
-            <strong>Reserva temporária de estoque ativa (RN0044 / RNF0045):</strong> Seus itens estão bloqueados por{' '}
+            <strong>Reserva temporária de estoque ativa (RN0044 / RN0045):</strong> Seus itens estão bloqueados por{' '}
             <span className="badge bg-dark font-monospace timer-bloqueio-carrinho">{formatTimer(remainingSeconds)}</span>{' '}
             a partir do último item incluído.
           </div>
+          {remainingSeconds <= 300 && remainingSeconds > 0 && (
+            <span className="badge bg-warning text-dark notificacao-expiracao-5min">
+              <i className="bi bi-bell-fill me-1"></i>
+              Aviso (RN0044): Faltam 5 minutos ou menos para sua reserva expirar!
+            </span>
+          )}
         </div>
       )}
 
