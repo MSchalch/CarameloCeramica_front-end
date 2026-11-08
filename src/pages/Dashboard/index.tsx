@@ -129,6 +129,15 @@ const Dashboard: React.FC = () => {
     }).format(valor || 0);
   };
 
+  // Categorias ativas a serem exibidas no gráfico de linhas
+  const categoriasExibicao = useMemo(() => {
+    if (!dados?.categoriasDisponiveis) return [];
+    if (categoriasSelecionadas.length === 0) return dados.categoriasDisponiveis;
+    return dados.categoriasDisponiveis.filter((cat) =>
+      categoriasSelecionadas.includes(cat),
+    );
+  }, [dados, categoriasSelecionadas]);
+
   const exportarCSV = () => {
     if (
       !dados ||
@@ -139,19 +148,27 @@ const Dashboard: React.FC = () => {
       return;
     }
 
-    const headers = ["Data", ...(dados.categoriasDisponiveis || [])];
+    const categoriasParaExportar =
+      categoriasExibicao.length > 0
+        ? categoriasExibicao
+        : dados.categoriasDisponiveis || [];
+
+    const headers = ["Data", ...categoriasParaExportar];
     const rows = dados.dadosGraficoLinhas.map((linha) => {
       return [
         linha.data,
-        ...(dados.categoriasDisponiveis || []).map((cat) => linha[cat] || 0),
+        ...categoriasParaExportar.map((cat) => linha[cat] || 0),
       ].join(";");
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," + [headers.join(";"), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    // Adiciona o BOM (\uFEFF) no início para que o Excel no Windows reconheça UTF-8 e exiba acentos ("Xícaras") corretamente
+    const conteudoCSV = "\uFEFF" + [headers.join(";"), ...rows].join("\r\n");
+    const blob = new Blob([conteudoCSV], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute(
       "download",
       `relatorio_vendas_${dataInicio}_a_${dataFim}.csv`,
@@ -159,16 +176,8 @@ const Dashboard: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
-
-  // Categorias ativas a serem exibidas no gráfico de linhas
-  const categoriasExibicao = useMemo(() => {
-    if (!dados?.categoriasDisponiveis) return [];
-    if (categoriasSelecionadas.length === 0) return dados.categoriasDisponiveis;
-    return dados.categoriasDisponiveis.filter((cat) =>
-      categoriasSelecionadas.includes(cat),
-    );
-  }, [dados, categoriasSelecionadas]);
 
   return (
     <div className="container py-4">
