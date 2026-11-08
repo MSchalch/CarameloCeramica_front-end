@@ -107,9 +107,12 @@ describe('[ONLINE] Análise de Vendas: Gráfico de Linhas por Categoria (Roteiro
 
   it('5) Compra com status diferente de ENTREGUE não contabilizada no gráfico', () => {
     const hoje = new Date();
-    const mesAnoAtual = `${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
-    const inicioMes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
-    const fimMes = hoje.toISOString().split('T')[0];
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const mesAnoAtual = `${mes}/${ano}`;
+    const inicioMes = `${ano}-${mes}-01`;
+    const fimMes = `${ano}-${mes}-${dia}`;
 
     cy.request('http://localhost:8080/api/pecas?page=0&size=10').then((resPecas) => {
       const pecaTeste = resPecas.body.content.find((p: any) => p.ativo && p.estoque >= 2);
@@ -124,6 +127,7 @@ describe('[ONLINE] Análise de Vendas: Gráfico de Linhas por Categoria (Roteiro
         const valorAntes = Number(pontoAntes ? pontoAntes[categoriaAlvo] || 0 : 0);
 
         // Realiza compra que fica com status APROVADA (diferente de ENTREGUE)
+        cy.intercept('GET', '**/api/clientes/*').as('carregarClienteCheckout');
         cy.loginCliente('marina.silva@email.com', '123456');
         cy.visit('/');
         cy.contains('.product-card', pecaTeste.nome).within(() => {
@@ -131,20 +135,24 @@ describe('[ONLINE] Análise de Vendas: Gráfico de Linhas por Categoria (Roteiro
           cy.get('.btn-adicionar-carrinho').click();
         });
         cy.get('.btn-iniciar-compra').click();
-        cy.get('.btn-confirmar-pedido').click();
+        cy.wait('@carregarClienteCheckout');
+        cy.get('.btn-confirmar-pedido').should('not.be.disabled').click();
         cy.get('.modal-confirmacao-compra').should('be.visible');
         cy.get('.btn-autorizar-pagamento').click();
         cy.url({ timeout: 10000 }).should('include', '/profile/orders');
         cy.get('.card-pedido-cliente').first().find('.badge-status-pedido').should('contain', 'APROVADA');
 
         // Verifica no Dashboard que a compra APROVADA não alterou o valor do gráfico
+        cy.intercept('GET', '**/api/dashboard/analise*').as('consultarAnalise');
         cy.loginAdmin();
         cy.visit('/dashboard');
+        cy.wait('@consultarAnalise');
         cy.get('.input-data-inicio-dashboard').clear().type(inicioMes);
         cy.get('.input-data-fim-dashboard').clear().type(fimMes);
         cy.contains('button', 'Limpar').click();
         cy.contains('button', categoriaAlvo).click();
         cy.get('.btn-aplicar-filtros-dashboard').click();
+        cy.wait('@consultarAnalise');
 
         cy.get(`tr.linha-mes-dashboard[data-mes="${mesAnoAtual}"]`)
           .find(`td.celula-valor-categoria[data-categoria="${categoriaAlvo}"]`)
@@ -155,9 +163,12 @@ describe('[ONLINE] Análise de Vendas: Gráfico de Linhas por Categoria (Roteiro
 
   it('6) Compra que passa a ENTREGUE dentro do período refletida na consulta seguinte', () => {
     const hoje = new Date();
-    const mesAnoAtual = `${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
-    const inicioMes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
-    const fimMes = hoje.toISOString().split('T')[0];
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const mesAnoAtual = `${mes}/${ano}`;
+    const inicioMes = `${ano}-${mes}-01`;
+    const fimMes = `${ano}-${mes}-${dia}`;
 
     cy.request('http://localhost:8080/api/pecas?page=0&size=10').then((resPecas) => {
       const pecaTeste = resPecas.body.content.find((p: any) => p.ativo && p.estoque >= 2);
@@ -172,6 +183,7 @@ describe('[ONLINE] Análise de Vendas: Gráfico de Linhas por Categoria (Roteiro
         const valorAntes = Number(pontoAntes ? pontoAntes[categoriaAlvo] || 0 : 0);
 
         // Cliente realiza uma compra (APROVADA)
+        cy.intercept('GET', '**/api/clientes/*').as('carregarClienteCheckout');
         cy.loginCliente('marina.silva@email.com', '123456');
         cy.visit('/');
         cy.contains('.product-card', pecaTeste.nome).within(() => {
@@ -179,7 +191,8 @@ describe('[ONLINE] Análise de Vendas: Gráfico de Linhas por Categoria (Roteiro
           cy.get('.btn-adicionar-carrinho').click();
         });
         cy.get('.btn-iniciar-compra').click();
-        cy.get('.btn-confirmar-pedido').click();
+        cy.wait('@carregarClienteCheckout');
+        cy.get('.btn-confirmar-pedido').should('not.be.disabled').click();
         cy.get('.modal-confirmacao-compra').should('be.visible');
         cy.get('.btn-autorizar-pagamento').click();
         cy.url({ timeout: 10000 }).should('include', '/profile/orders');
@@ -192,22 +205,32 @@ describe('[ONLINE] Análise de Vendas: Gráfico de Linhas por Categoria (Roteiro
             const codigoPedido = textoCodigo.replace('Pedido #', '').trim();
 
             // Admin altera status da compra para EM TRANSPORTE e depois para ENTREGUE
+            cy.intercept('PUT', '**/api/pedidos').as('atualizarPedido');
             cy.loginAdmin();
             cy.visit('/admin/orders');
             cy.contains('tr.linha-pedido-admin', codigoPedido).find('.btn-despachar-pedido').click();
+            cy.wait('@atualizarPedido');
+            cy.contains('tr.linha-pedido-admin', codigoPedido)
+              .find('.select-status-pedido-admin')
+              .should('have.value', 'EM TRANSPORTE');
+
             cy.contains('tr.linha-pedido-admin', codigoPedido).find('.btn-confirmar-entrega').click();
+            cy.wait('@atualizarPedido');
             cy.contains('tr.linha-pedido-admin', codigoPedido)
               .find('.select-status-pedido-admin')
               .should('have.value', 'ENTREGUE');
 
             // Na consulta seguinte ao Dashboard, o valor da compra ENTREGUE está somado no mês!
             const valorEsperadoAposEntrega = valorAntes + Number(pecaTeste.valorVenda);
+            cy.intercept('GET', '**/api/dashboard/analise*').as('consultarAnalise');
             cy.visit('/dashboard');
+            cy.wait('@consultarAnalise');
             cy.get('.input-data-inicio-dashboard').clear().type(inicioMes);
             cy.get('.input-data-fim-dashboard').clear().type(fimMes);
             cy.contains('button', 'Limpar').click();
             cy.contains('button', categoriaAlvo).click();
             cy.get('.btn-aplicar-filtros-dashboard').click();
+            cy.wait('@consultarAnalise');
 
             cy.get(`tr.linha-mes-dashboard[data-mes="${mesAnoAtual}"]`)
               .find(`td.celula-valor-categoria[data-categoria="${categoriaAlvo}"]`)

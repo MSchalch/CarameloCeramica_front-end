@@ -30,13 +30,15 @@ const Dashboard: React.FC = () => {
   const [dados, setDados] = useState<DashboardData | null>(null);
   const [tempoRespostaMs, setTempoRespostaMs] = useState<number>(0);
 
-  // Estados dos filtros (padrão: últimos 6 meses agrupados por mês/ano - MM/yyyy)
-  const hoje = useMemo(() => new Date().toISOString().split("T")[0], []);
+  // Estados dos filtros (padrão: últimos 6 meses agrupados por mês/ano - MM/yyyy, usando fuso local)
+  const hoje = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
   const seisMesesAtras = useMemo(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 5);
-    d.setDate(1);
-    return d.toISOString().split("T")[0];
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
   }, []);
 
   const [dataInicio, setDataInicio] = useState<string>(seisMesesAtras);

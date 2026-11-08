@@ -1415,7 +1415,12 @@ const Checkout = () => {
               <button
                 className="btn btn-warning w-100 fw-bold shadow-sm py-3 fs-5 btn-confirmar-pedido"
                 onClick={handleConfirmOrder}
-                disabled={loading || items.length === 0}
+                disabled={
+                  loading ||
+                  items.length === 0 ||
+                  !currentCustomer ||
+                  !selectedAddressId
+                }
               >
                 {loading ? (
                   <span>
