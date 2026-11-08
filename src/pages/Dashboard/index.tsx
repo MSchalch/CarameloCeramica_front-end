@@ -138,6 +138,27 @@ const Dashboard: React.FC = () => {
     );
   }, [dados, categoriasSelecionadas]);
 
+  // Soma das vendas ENTREGUE por categoria seguindo o mesmo filtro do gráfico
+  const totaisPorCategoria = useMemo(() => {
+    const mapa: Record<string, number> = {};
+    if (!dados?.dadosGraficoLinhas) return mapa;
+    categoriasExibicao.forEach((cat) => {
+      mapa[cat] = dados.dadosGraficoLinhas.reduce(
+        (acc, linha) => acc + Number(linha[cat] || 0),
+        0,
+      );
+    });
+    return mapa;
+  }, [dados, categoriasExibicao]);
+
+  // Total geral das vendas ENTREGUE das categorias selecionadas no período filtrado
+  const totalGeralGrafico = useMemo(() => {
+    return categoriasExibicao.reduce(
+      (acc, cat) => acc + (totaisPorCategoria[cat] || 0),
+      0,
+    );
+  }, [categoriasExibicao, totaisPorCategoria]);
+
   const exportarCSV = () => {
     if (
       !dados ||
@@ -401,84 +422,79 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Cards de Métricas Principais (KPIs) posicionados abaixo do gráfico */}
+      {/* Cards com o Total Vendido por Categoria (seguindo o mesmo filtro do gráfico) + 6º Card com o Total Geral do Período */}
       <div className="row g-3 mb-4">
-        <div className="col-12 col-sm-6 col-lg-3">
-          <div
-            className="card shadow-sm border-0 h-100"
-            style={{ borderRadius: "12px", borderLeft: "4px solid #426B69" }}
-          >
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="text-muted fw-semibold small">
-                  Vendas Totais
-                </span>
-                <i className="bi bi-cash-stack text-success fs-4"></i>
-              </div>
-              <h3 className="fw-bold mb-0 mt-2 text-dark">
-                {dados ? formatarMoeda(dados.vendasTotais) : "R$ 0,00"}
-              </h3>
-              <small className="text-muted">No período filtrado</small>
-            </div>
-          </div>
-        </div>
+        {(dados?.categoriasDisponiveis || []).map((cat, idx) => {
+          const cor = CORES_PALETA[idx % CORES_PALETA.length];
+          const ativaNoFiltro = categoriasExibicao.includes(cat);
+          const valorTotalCategoria = ativaNoFiltro
+            ? totaisPorCategoria[cat] || 0
+            : 0;
 
-        <div className="col-12 col-sm-6 col-lg-3">
-          <div
-            className="card shadow-sm border-0 h-100"
-            style={{ borderRadius: "12px", borderLeft: "4px solid #B08F70" }}
-          >
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="text-muted fw-semibold small">
-                  Pedidos Realizados
-                </span>
-                <i className="bi bi-bag-check text-primary fs-4"></i>
+          return (
+            <div key={cat} className="col-12 col-sm-6 col-md-4 col-xl-2">
+              <div
+                className="card shadow-sm border-0 h-100 card-total-categoria"
+                data-categoria={cat}
+                data-valor={valorTotalCategoria.toFixed(2)}
+                style={{
+                  borderRadius: "12px",
+                  borderLeft: `4px solid ${cor}`,
+                  opacity: ativaNoFiltro ? 1 : 0.55,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <div className="card-body py-3 px-3">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span
+                      className="fw-bold small text-truncate"
+                      style={{ color: cor }}
+                    >
+                      {cat}
+                    </span>
+                    <i
+                      className="bi bi-tag-fill fs-5"
+                      style={{ color: cor }}
+                    ></i>
+                  </div>
+                  <h4 className="fw-bold mb-0 mt-2 text-dark">
+                    {formatarMoeda(valorTotalCategoria)}
+                  </h4>
+                  <small className="text-muted" style={{ fontSize: "0.75rem" }}>
+                    {ativaNoFiltro
+                      ? "Total ENTREGUE no filtro"
+                      : "Oculta no filtro"}
+                  </small>
+                </div>
               </div>
-              <h3 className="fw-bold mb-0 mt-2 text-dark">
-                {dados?.pedidosTotais || 0}
-              </h3>
-              <small className="text-muted">Total de pedidos</small>
             </div>
-          </div>
-        </div>
+          );
+        })}
 
-        <div className="col-12 col-sm-6 col-lg-3">
+        {/* 6º Card: Total Geral Vendido no Período Filtrado */}
+        <div className="col-12 col-sm-6 col-md-4 col-xl-2">
           <div
-            className="card shadow-sm border-0 h-100"
-            style={{ borderRadius: "12px", borderLeft: "4px solid #2E6F9E" }}
+            className="card shadow-sm border-0 h-100 card-total-geral-periodo"
+            data-valor={totalGeralGrafico.toFixed(2)}
+            style={{
+              borderRadius: "12px",
+              borderLeft: "4px solid #198754",
+              backgroundColor: "#f8fff9",
+            }}
           >
-            <div className="card-body">
+            <div className="card-body py-3 px-3">
               <div className="d-flex justify-content-between align-items-center">
-                <span className="text-muted fw-semibold small">
-                  Novos Clientes
+                <span className="fw-bold small text-success">
+                  Total no Período
                 </span>
-                <i className="bi bi-people text-info fs-4"></i>
+                <i className="bi bi-cash-stack text-success fs-5"></i>
               </div>
-              <h3 className="fw-bold mb-0 mt-2 text-dark">
-                {dados?.novosClientes || 0}
-              </h3>
-              <small className="text-muted">Cadastrados no período</small>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-12 col-sm-6 col-lg-3">
-          <div
-            className="card shadow-sm border-0 h-100"
-            style={{ borderRadius: "12px", borderLeft: "4px solid #C25953" }}
-          >
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <span className="text-muted fw-semibold small">
-                  Trocas Solicitadas
-                </span>
-                <i className="bi bi-arrow-repeat text-danger fs-4"></i>
-              </div>
-              <h3 className="fw-bold mb-0 mt-2 text-dark">
-                {dados?.trocasSolicitadas || 0}
-              </h3>
-              <small className="text-muted">Solicitações de troca</small>
+              <h4 className="fw-bold mb-0 mt-2 text-success">
+                {formatarMoeda(totalGeralGrafico)}
+              </h4>
+              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
+                Soma das categorias no gráfico
+              </small>
             </div>
           </div>
         </div>
