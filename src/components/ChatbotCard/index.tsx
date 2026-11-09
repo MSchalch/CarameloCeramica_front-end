@@ -13,10 +13,22 @@ import { useAuth } from '../../contexts/AuthContext';
 import './ChatbotCard.css';
 
 const SUGESTOES_PADRAO = [
-  '✨ Me dê uma recomendação personalizada para minha coleção',
-  '🔍 Estou buscando peças de vaso ou cachepô para plantas',
-  '🔥 Dúvida: as peças podem ir ao forno e micro-ondas?',
-  '📚 Sugira conteúdos e guias de mesa posta e conservação',
+  {
+    label: '✨ Recomendação personalizada',
+    prompt: 'Me dê uma recomendação personalizada para minha coleção',
+  },
+  {
+    label: '🔍 Buscar vasos e cachepôs',
+    prompt: 'Estou buscando peças de vaso ou cachepô para plantas',
+  },
+  {
+    label: '🔥 Vai ao forno e micro-ondas?',
+    prompt: 'Dúvida: as peças podem ir ao forno e micro-ondas?',
+  },
+  {
+    label: '📚 Guias de mesa posta',
+    prompt: 'Sugira conteúdos e guias de mesa posta e conservação',
+  },
 ];
 
 const ChatbotCard: React.FC = () => {
@@ -362,7 +374,7 @@ const ChatbotCard: React.FC = () => {
           </div>
 
           {/* Barra de Perfil do Cliente e Preferências (RNF0044 Critérios 3.a, 3.e, Cenários 2 e 3) */}
-          <div className="bg-light border-bottom px-2 py-1" style={{ fontSize: '0.76rem' }}>
+          <div className="bg-light border-bottom px-2 py-1 flex-shrink-0" style={{ fontSize: '0.76rem' }}>
             <div className="d-flex align-items-center justify-content-between gap-1">
               <div className="d-flex align-items-center gap-1 flex-grow-1">
                 <span className="fw-semibold text-secondary">Cliente:</span>
@@ -612,24 +624,22 @@ const ChatbotCard: React.FC = () => {
           </div>
 
           {/* Sugestões Rápidas */}
-          <div
-            className="bg-light px-3 py-2 border-top d-flex gap-1 overflow-auto"
-            style={{ scrollbarWidth: 'none' }}
-          >
+          <div className="chatbot-suggestions">
             {SUGESTOES_PADRAO.map((sugestao, i) => (
               <button
                 key={i}
                 type="button"
                 className="quick-topic-badge"
-                onClick={() => handleEnviar(sugestao.replace(/^[^\w\s]+/, '').trim())}
+                title={sugestao.prompt}
+                onClick={() => handleEnviar(sugestao.prompt)}
               >
-                {sugestao}
+                {sugestao.label}
               </button>
             ))}
           </div>
 
           {/* Rodapé / Input */}
-          <div className="card-footer bg-white border-0 p-2">
+          <div className="card-footer bg-white border-0 p-2 flex-shrink-0">
             <div className="input-group">
               <input
                 type="text"
