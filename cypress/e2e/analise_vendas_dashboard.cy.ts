@@ -23,7 +23,7 @@ describe('[ONLINE] Análise de Vendas: Gráfico de Linhas por Categoria (Roteiro
     cy.get('.btn-aplicar-filtros-dashboard').click();
 
     // Calcula a soma das vendas ENTREGUE de Bowls na base para cada mês e confere com os valores exibidos
-    cy.request('http://localhost:8080/api/pedidos?size=200').then((resPedidos) => {
+    cy.request('http://localhost:8080/api/pedidos?size=10000').then((resPedidos) => {
       const pedidos = resPedidos.body.content || [];
       let somaSetembroBowls = 0;
 
