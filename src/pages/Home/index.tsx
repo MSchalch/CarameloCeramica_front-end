@@ -79,11 +79,21 @@ const Home = () => {
               <ProductCard
                 product={{
                   id: product.id!,
+                  sku: product.sku,
                   name: product.nome,
+                  artesaoMarca: product.artesaoMarca,
                   price: Number(product.valorVenda || 0),
                   category: product.categoria,
+                  categoriasAdicionais: product.categoriasAdicionais,
                   estoque: product.estoque ?? 10,
                   peso: product.peso || 500,
+                  altura: product.altura,
+                  diametro: product.diametro,
+                  volume: product.volume,
+                  tipoArgila: product.tipoArgila,
+                  tipoEsmalte: product.tipoEsmalte,
+                  vaiAoForno: product.vaiAoForno,
+                  vaiAoMicroondas: product.vaiAoMicroondas,
                   img:
                     product.imagemUrl ||
                     "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80",

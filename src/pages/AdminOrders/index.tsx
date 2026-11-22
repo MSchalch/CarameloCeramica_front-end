@@ -87,7 +87,7 @@ const AdminOrders = () => {
 
       <div className="card shadow-sm border-0">
         <div className="card-body p-4">
-          {loading ? (
+          {loading && orders.length === 0 ? (
             <div className="text-center py-5">
               <div className="spinner-border text-warning" role="status"></div>
               <p className="text-muted mt-2">Carregando pedidos do servidor...</p>

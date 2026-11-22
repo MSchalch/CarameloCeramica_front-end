@@ -116,7 +116,8 @@ describe('Roteiro Mínimo de Demonstração - Venda de Ponta a Ponta e Ciclo de 
     cy.loginCliente('marina.silva@email.com', '123456');
 
     cy.visit('/');
-    cy.get('.product-card').first().within(() => {
+    // Seleciona "Bowl Texturizado Areia" (R$ 58,00) para que 58 - 20 (CARAMELO20) + 15 (frete) - 50 (TROCA-50) = R$ 3,00 (< R$ 10,00)
+    cy.contains('.product-card', 'Bowl Texturizado Areia').within(() => {
       cy.get('.btn-adicionar-carrinho').click();
     });
 
@@ -132,8 +133,8 @@ describe('Roteiro Mínimo de Demonstração - Venda de Ponta a Ponta e Ciclo de 
     cy.get('.btn-aplicar-cupom-troca').click();
     cy.get('.linha-cupom-troca').should('contain', 'TROCA-50');
 
-    // Confirma que o valor a pagar no cartão é < R$ 10,00 (ex: R$ 9,00) e é permitido (RN0035)
-    cy.get('.input-cartao-valor').invoke('val').then((val) => {
+    // Confirma que o valor a pagar no cartão é < R$ 10,00 (ex: R$ 3,00) e é permitido (RN0035)
+    cy.get('.input-cartao-valor').invoke('val').should((val) => {
       const numVal = parseFloat(String(val).replace('R$', '').replace(/\./g, '').replace(',', '.').trim());
       expect(numVal).to.be.lessThan(10);
       expect(numVal).to.be.greaterThan(0);

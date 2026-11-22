@@ -23,6 +23,42 @@ const Cart = () => {
   const [opcaoSelecionada, setOpcaoSelecionada] = useState<OpcaoFrete | null>(null);
   const [calculandoFrete, setCalculandoFrete] = useState(false);
   const [erroFrete, setErroFrete] = useState<string | null>(null);
+  const [qtyDraft, setQtyDraft] = useState<{ [id: number]: string }>({});
+  const [pecaDetalheModal, setPecaDetalheModal] = useState<CartItem | null>(null);
+
+  const handleAbrirDetalhesProduto = async (item: CartItem) => {
+    setPecaDetalheModal(item);
+    try {
+      const pecaCompleta = await productService.buscarPorId(item.id);
+      if (pecaCompleta) {
+        setPecaDetalheModal((prev) =>
+          prev && prev.id === item.id
+            ? {
+                ...prev,
+                sku: pecaCompleta.sku || prev.sku,
+                nome: pecaCompleta.nome || prev.nome,
+                artesaoMarca: pecaCompleta.artesaoMarca || prev.artesaoMarca,
+                preco: Number(pecaCompleta.valorVenda ?? prev.preco),
+                categoria: pecaCompleta.categoria || prev.categoria,
+                categoriasAdicionais: pecaCompleta.categoriasAdicionais || prev.categoriasAdicionais,
+                estoque: pecaCompleta.estoque ?? prev.estoque,
+                peso: pecaCompleta.peso ?? prev.peso,
+                altura: pecaCompleta.altura ?? prev.altura,
+                diametro: pecaCompleta.diametro ?? prev.diametro,
+                volume: pecaCompleta.volume ?? prev.volume,
+                tipoArgila: pecaCompleta.tipoArgila || prev.tipoArgila,
+                tipoEsmalte: pecaCompleta.tipoEsmalte || prev.tipoEsmalte,
+                vaiAoForno: pecaCompleta.vaiAoForno ?? prev.vaiAoForno,
+                vaiAoMicroondas: pecaCompleta.vaiAoMicroondas ?? prev.vaiAoMicroondas,
+                imagemUrl: pecaCompleta.imagemUrl || prev.imagemUrl,
+              }
+            : prev
+        );
+      }
+    } catch {
+      // Mantém os dados já presentes no item do carrinho caso a consulta falhe
+    }
+  };
 
   const handleFinalizarCompra = async () => {
     if (items.length === 0) return;
@@ -378,17 +414,38 @@ const Cart = () => {
                         idx < items.length - 1 ? 'border-bottom' : ''
                       }`}
                     >
-                      <img
-                        src={
-                          item.imagemUrl ||
-                          'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=100&q=80'
-                        }
-                        alt={item.nome}
-                        className="rounded"
-                        style={{ width: 80, height: 80, objectFit: 'cover' }}
-                      />
+                      <div
+                        className="position-relative d-inline-block"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleAbrirDetalhesProduto(item)}
+                        title="Clique para ver detalhes e ficha técnica da peça"
+                        data-testid={`cart-item-img-trigger-${item.id}`}
+                      >
+                        <img
+                          src={
+                            item.imagemUrl ||
+                            'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=100&q=80'
+                          }
+                          alt={item.nome}
+                          className="rounded"
+                          style={{ width: 80, height: 80, objectFit: 'cover' }}
+                        />
+                        <span
+                          className="badge bg-dark bg-opacity-75 text-white position-absolute bottom-0 end-0 m-1 px-1 py-0"
+                          style={{ fontSize: '0.68rem', fontWeight: 500 }}
+                        >
+                          <i className="bi bi-eye"></i>
+                        </span>
+                      </div>
                       <div className="ms-3 flex-grow-1">
-                        <h5 className="fw-bold mb-1 item-nome">{item.nome}</h5>
+                        <h5
+                          className="fw-bold mb-1 item-nome"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleAbrirDetalhesProduto(item)}
+                          title="Clique para ver detalhes da peça"
+                        >
+                          {item.nome}
+                        </h5>
                         <span className="badge bg-light text-dark border mb-1">{item.categoria}</span>
                         <p className="text-muted mb-0 small">
                           Estoque disponível: <strong className="estoque-disponivel">{item.estoque} un.</strong>
@@ -399,10 +456,30 @@ const Cart = () => {
                           type="number"
                           className="form-control me-2 text-center input-quantidade-carrinho"
                           style={{ width: '75px' }}
-                          value={item.quantidade}
+                          value={
+                            qtyDraft[item.id] !== undefined
+                              ? qtyDraft[item.id]
+                              : item.quantidade
+                          }
                           min="1"
                           max={item.estoque || 99}
-                          onChange={(e) => handleQtyChange(item.id, Number(e.target.value))}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            setQtyDraft((prev) => ({ ...prev, [item.id]: raw }));
+                            if (raw !== '') {
+                              const parsed = parseInt(raw, 10);
+                              if (!isNaN(parsed) && parsed >= 1) {
+                                handleQtyChange(item.id, parsed);
+                              }
+                            }
+                          }}
+                          onBlur={() => {
+                            setQtyDraft((prev) => {
+                              const next = { ...prev };
+                              delete next[item.id];
+                              return next;
+                            });
+                          }}
                         />
                         <button
                           className="btn btn-outline-danger btn-sm btn-remover-item"
@@ -587,6 +664,182 @@ const Cart = () => {
                     <span>Você não está conectado. Ao finalizar, solicitaremos seu login ou cadastro para entrega.</span>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalhes e Ficha Técnica da Peça no Carrinho (igual ao Catálogo) */}
+      {pecaDetalheModal && (
+        <div
+          className="modal fade show d-block"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1060 }}
+          onClick={() => setPecaDetalheModal(null)}
+          data-testid="product-details-modal"
+        >
+          <div
+            className="modal-dialog modal-lg modal-dialog-centered"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+              <div className="modal-header bg-dark text-white border-0">
+                <div>
+                  <h5 className="modal-title fw-bold mb-0">{pecaDetalheModal.nome}</h5>
+                  {pecaDetalheModal.artesaoMarca && (
+                    <small className="text-white-50">
+                      Artesão / Ateliê: <strong>{pecaDetalheModal.artesaoMarca}</strong>
+                      {pecaDetalheModal.sku ? ` • SKU: ${pecaDetalheModal.sku}` : ''}
+                    </small>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setPecaDetalheModal(null)}
+                  aria-label="Fechar"
+                />
+              </div>
+
+              <div className="modal-body p-4">
+                <div className="row g-4 align-items-center">
+                  <div className="col-md-5">
+                    <img
+                      src={
+                        pecaDetalheModal.imagemUrl ||
+                        'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80'
+                      }
+                      alt={pecaDetalheModal.nome}
+                      className="img-fluid rounded-3 shadow-sm w-100"
+                      style={{ maxHeight: '320px', objectFit: 'cover' }}
+                    />
+                  </div>
+
+                  <div className="col-md-7">
+                    <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
+                      <span className="badge bg-secondary">{pecaDetalheModal.categoria}</span>
+                      {pecaDetalheModal.categoriasAdicionais &&
+                        pecaDetalheModal.categoriasAdicionais
+                          .filter((c) => c !== pecaDetalheModal.categoria)
+                          .map((cat, i) => (
+                            <span key={i} className="badge bg-light text-dark border">
+                              {cat}
+                            </span>
+                          ))}
+                      {(pecaDetalheModal.estoque ?? 0) <= 0 ? (
+                        <span className="badge bg-danger">Esgotado</span>
+                      ) : (
+                        <span className="badge bg-success-subtle text-success border border-success-subtle">
+                          {pecaDetalheModal.estoque} unidades em estoque
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="fw-bold text-success mb-3">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(pecaDetalheModal.preco)}
+                    </h3>
+
+                    <h6 className="fw-bold text-dark border-bottom pb-2 mb-3">
+                      <i className="bi bi-sliders me-2 text-warning"></i>
+                      Ficha Técnica Artesanal
+                    </h6>
+
+                    <div className="row g-2 mb-3" style={{ fontSize: '0.92rem' }}>
+                      <div className="col-6">
+                        <div className="p-2 rounded bg-light border">
+                          <small className="text-muted d-block">Tipo de Argila</small>
+                          <strong>{pecaDetalheModal.tipoArgila || 'Cerâmica Artesanal'}</strong>
+                        </div>
+                      </div>
+                      <div className="col-6">
+                        <div className="p-2 rounded bg-light border">
+                          <small className="text-muted d-block">Acabamento / Esmalte</small>
+                          <strong>{pecaDetalheModal.tipoEsmalte || 'Esmalte Mineral'}</strong>
+                        </div>
+                      </div>
+                      <div className="col-6">
+                        <div className="p-2 rounded bg-light border">
+                          <small className="text-muted d-block">Dimensões (Alt. × Diâm.)</small>
+                          <strong>
+                            {pecaDetalheModal.altura ? `${pecaDetalheModal.altura} cm` : '-'} ×{' '}
+                            {pecaDetalheModal.diametro ? `${pecaDetalheModal.diametro} cm` : '-'}
+                          </strong>
+                        </div>
+                      </div>
+                      <div className="col-6">
+                        <div className="p-2 rounded bg-light border">
+                          <small className="text-muted d-block">Peso / Capacidade</small>
+                          <strong>
+                            {pecaDetalheModal.peso ? `${pecaDetalheModal.peso} g` : '-'}
+                            {pecaDetalheModal.volume && pecaDetalheModal.volume > 0
+                              ? ` • ${pecaDetalheModal.volume} ml`
+                              : ''}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="d-flex flex-wrap gap-2 mb-4">
+                      <span
+                        className={`badge px-3 py-2 ${
+                          pecaDetalheModal.vaiAoForno
+                            ? 'bg-success-subtle text-success border border-success-subtle'
+                            : 'bg-secondary-subtle text-secondary border'
+                        }`}
+                      >
+                        <i
+                          className={`bi ${
+                            pecaDetalheModal.vaiAoForno ? 'bi-check-circle-fill' : 'bi-x-circle'
+                          } me-1`}
+                        ></i>
+                        Forno: {pecaDetalheModal.vaiAoForno ? 'Sim (até 1240°C)' : 'Não indicado'}
+                      </span>
+
+                      <span
+                        className={`badge px-3 py-2 ${
+                          pecaDetalheModal.vaiAoMicroondas
+                            ? 'bg-success-subtle text-success border border-success-subtle'
+                            : 'bg-secondary-subtle text-secondary border'
+                        }`}
+                      >
+                        <i
+                          className={`bi ${
+                            pecaDetalheModal.vaiAoMicroondas
+                              ? 'bi-check-circle-fill'
+                              : 'bi-x-circle'
+                          } me-1`}
+                        ></i>
+                        Micro-ondas: {pecaDetalheModal.vaiAoMicroondas ? 'Sim' : 'Não indicado'}
+                      </span>
+                    </div>
+
+                    <div className="d-flex align-items-center justify-content-between bg-light p-2 rounded-3 border mb-3">
+                      <span className="small text-muted">
+                        Quantidade no seu carrinho: <strong>{pecaDetalheModal.quantidade} un.</strong>
+                      </span>
+                      <span className="small fw-bold text-success">
+                        Subtotal:{' '}
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(pecaDetalheModal.preco * pecaDetalheModal.quantidade)}
+                      </span>
+                    </div>
+
+                    <div className="d-flex justify-content-end">
+                      <button
+                        type="button"
+                        onClick={() => setPecaDetalheModal(null)}
+                        className="btn btn-outline-secondary px-4 py-2"
+                      >
+                        Fechar
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

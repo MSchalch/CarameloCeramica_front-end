@@ -2,7 +2,7 @@
 
 describe('Validação de Cadastro de Peças e Controle de Estoque (Documento de Requisitos)', () => {
   const timestamp = Date.now();
-  const nomePeca = `Bowl Artesanal Teste ${timestamp}`;
+  const nomePeca = `Z-Bowl Artesanal Teste ${timestamp}`;
 
   beforeEach(() => {
     cy.loginAdmin();

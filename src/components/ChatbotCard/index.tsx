@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { chatService } from '../../services/chatService';
 import { cartService } from '../../services/cartService';
@@ -14,15 +13,15 @@ import './ChatbotCard.css';
 
 const SUGESTOES_PADRAO = [
   {
-    label: '✨ Recomendação personalizada',
+    label: '✨ Recomendação para mim',
     prompt: 'Me dê uma recomendação personalizada para minha coleção',
   },
   {
-    label: '🔍 Buscar vasos e cachepôs',
+    label: '🔍 Buscar vasos e peças',
     prompt: 'Estou buscando peças de vaso ou cachepô para plantas',
   },
   {
-    label: '🔥 Vai ao forno e micro-ondas?',
+    label: '🔥 Forno e micro-ondas',
     prompt: 'Dúvida: as peças podem ir ao forno e micro-ondas?',
   },
   {
@@ -31,43 +30,67 @@ const SUGESTOES_PADRAO = [
   },
 ];
 
+const MENSAGEM_BOAS_VINDAS: ChatMensagem = {
+  id: '1',
+  remetente: 'bot',
+  texto:
+    'Olá! Sou o **Caramelo Bot**, seu consultor com IA Generativa. 🏺✨\n\nOfereço **recomendações personalizadas** com base no seu histórico e preferências, ajudo na **busca de peças**, tiro **dúvidas técnicas** e sugiro **guias de cuidado e mesa posta**.',
+  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+};
+
 const ChatbotCard: React.FC = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [expandido, setExpandido] = useState(false);
   const [mensagemInput, setMensagemInput] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [clienteId, setClienteId] = useState<number>(1);
   const [clientesPerfis, setClientesPerfis] = useState<ClientePerfilChat[]>([]);
   const [mostrarPreferencias, setMostrarPreferencias] = useState(false);
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(true);
   const [preferenciasTexto, setPreferenciasTexto] = useState('');
   const [mostrarModalTreino, setMostrarModalTreino] = useState(false);
   const [statusTreinamento, setStatusTreinamento] = useState<StatusTreinamentoIA | null>(null);
   const [treinandoModelo, setTreinandoModelo] = useState(false);
 
-  const [mensagens, setMensagens] = useState<ChatMensagem[]>([
-    {
-      id: '1',
-      remetente: 'bot',
-      texto:
-        'Olá! Sou o **Caramelo Bot**, o consultor com IA Generativa da Caramelo Cerâmicas. 🏺✨\n\nEstou integrado ao seu **histórico de compras**, às suas **preferências de estilo** e ao **modelo treinado continuamente com vendas e feedbacks**. Como posso ajudar hoje?',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    },
-  ]);
+  const [mensagens, setMensagens] = useState<ChatMensagem[]>([MENSAGEM_BOAS_VINDAS]);
 
+  const clienteIdRef = useRef<number>(user?.clienteId || 4);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
-  const carregarStatusTreinamento = async () => {
+  const atualizarClienteAtivo = (id: number, textoPref?: string) => {
+    clienteIdRef.current = id;
+    setClienteId(id);
+    if (textoPref !== undefined) {
+      setPreferenciasTexto(textoPref);
+    }
+  };
+
+  const carregarStatusTreinamento = async (idPreferencial?: number) => {
     try {
       const status = await chatService.obterStatusTreinamento();
       setStatusTreinamento(status);
       if (status.clientesPerfis && status.clientesPerfis.length > 0) {
         setClientesPerfis(status.clientesPerfis);
-        const idAlvo = user?.clienteId || clienteId || status.clientesPerfis[0].id;
+
+        const perfilPorEmail = user?.login
+          ? status.clientesPerfis.find((c) => c.email.toLowerCase() === user.login.toLowerCase())
+          : undefined;
+        const perfilMarina = status.clientesPerfis.find(
+          (c) => c.email === 'marina.silva@email.com' || c.nome.includes('Marina Lima')
+        );
+
+        const idAlvo =
+          idPreferencial ||
+          user?.clienteId ||
+          perfilPorEmail?.id ||
+          (perfilMarina ? perfilMarina.id : status.clientesPerfis[0].id);
+
         const perfilAtivo =
           status.clientesPerfis.find((c) => c.id === idAlvo) || status.clientesPerfis[0];
-        setClienteId(perfilAtivo.id);
-        setPreferenciasTexto(perfilAtivo.preferenciasEstilo || '');
+
+        atualizarClienteAtivo(perfilAtivo.id, perfilAtivo.preferenciasEstilo || '');
       }
     } catch (err) {
       console.error('Erro ao carregar status de treinamento da IA:', err);
@@ -75,37 +98,27 @@ const ChatbotCard: React.FC = () => {
   };
 
   useEffect(() => {
-    if (user?.clienteId) {
-      setClienteId(user.clienteId);
+    const idUsuarioLogado = user?.clienteId ?? undefined;
+    if (idUsuarioLogado) {
+      atualizarClienteAtivo(idUsuarioLogado);
     }
-    carregarStatusTreinamento();
-  }, [user]);
+    carregarStatusTreinamento(idUsuarioLogado);
+    setMensagens([
+      {
+        ...MENSAGEM_BOAS_VINDAS,
+        id: '1',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
+    setMostrarSugestoes(true);
+  }, [user?.id, user?.clienteId, user?.login]);
 
   const clienteAtivo = clientesPerfis.find((c) => c.id === clienteId);
 
-  const handleTrocarCliente = (novoId: number) => {
-    setClienteId(novoId);
-    const perfil = clientesPerfis.find((c) => c.id === novoId);
-    if (perfil) {
-      setPreferenciasTexto(perfil.preferenciasEstilo || '');
-      setMensagens((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          remetente: 'bot',
-          texto: `Perfil ativo alterado para **${perfil.nome}**.\n• **Histórico de compras:** ${
-            perfil.pecasCompradas?.length ? perfil.pecasCompradas.join(', ') : 'Sem compras anteriores'
-          }\n• **Preferências:** ${perfil.preferenciasEstilo || 'Padrão'}`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
-    }
-  };
-
   const handleSalvarPreferencias = async () => {
-    if (!clienteId) return;
+    if (!clienteIdRef.current) return;
     try {
-      await chatService.atualizarPreferencias(clienteId, preferenciasTexto);
+      await chatService.atualizarPreferencias(clienteIdRef.current, preferenciasTexto);
       toast.success('Preferências atualizadas e modelo recalibrado!', { position: 'bottom-right' });
       await carregarStatusTreinamento();
       setMostrarPreferencias(false);
@@ -114,19 +127,20 @@ const ChatbotCard: React.FC = () => {
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   useEffect(() => {
-    if (isOpen) {
-      scrollToBottom();
+    if (!isOpen) return;
+    if (carregando) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } else if (mensagens.length > 1) {
+      lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [mensagens, carregando, isOpen]);
 
   const handleEnviar = async (textoParaEnviar?: string) => {
     const texto = (textoParaEnviar || mensagemInput).trim();
     if (!texto || carregando) return;
+
+    const idClienteEnvio = clienteIdRef.current || clienteId;
 
     const novaMensagemUsuario: ChatMensagem = {
       id: Date.now().toString(),
@@ -138,17 +152,21 @@ const ChatbotCard: React.FC = () => {
     const novoHistorico = [...mensagens, novaMensagemUsuario];
     setMensagens(novoHistorico);
     setMensagemInput('');
+    setMostrarSugestoes(false);
     setCarregando(true);
 
     try {
-      const historicoDTO = novoHistorico.slice(-6).map((m) => ({
-        remetente: m.remetente,
-        texto: m.texto,
-      }));
+      const historicoDTO = novoHistorico
+        .filter((m) => !m.id.startsWith('notice-'))
+        .slice(-6)
+        .map((m) => ({
+          remetente: m.remetente,
+          texto: m.texto,
+        }));
 
       const resposta = await chatService.enviarMensagem({
         mensagem: texto,
-        clienteId: clienteId,
+        clienteId: idClienteEnvio,
         historico: historicoDTO,
       });
 
@@ -191,7 +209,7 @@ const ChatbotCard: React.FC = () => {
           : 'Sem peças específicas';
 
       await chatService.registrarFeedback({
-        clienteId: clienteId,
+        clienteId: clienteIdRef.current || clienteId,
         perguntaUsuario: msg.perguntaOrigem || 'Interação no Chatbot',
         respostaBot: msg.texto,
         pecasRecomendadas: pecasStr,
@@ -263,6 +281,8 @@ const ChatbotCard: React.FC = () => {
         categoria: peca.categoria,
         quantidade: 1,
         estoque: peca.estoque ?? 10,
+        tipoArgila: peca.tipoArgila,
+        tipoEsmalte: peca.tipoEsmalte,
       });
     }
 
@@ -273,12 +293,12 @@ const ChatbotCard: React.FC = () => {
   const handleLimparChat = () => {
     setMensagens([
       {
-        id: Date.now().toString(),
-        remetente: 'bot',
-        texto: 'Conversa reiniciada! Como posso te ajudar a escolher suas peças hoje?',
+        ...MENSAGEM_BOAS_VINDAS,
+        id: '1',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
+    setMostrarSugestoes(true);
   };
 
   const renderizarTextoFormatado = (texto: string) => {
@@ -305,66 +325,75 @@ const ChatbotCard: React.FC = () => {
       {!isOpen && (
         <button
           data-testid="chatbot-toggle-btn"
-          className="btn rounded-circle shadow-lg chatbot-toggle"
+          className="btn rounded-circle chatbot-toggle"
           onClick={() => {
             setIsOpen(true);
-            carregarStatusTreinamento();
+            if (!statusTreinamento) {
+              carregarStatusTreinamento();
+            }
           }}
-          title="Falar com o assistente IA"
+          title="Falar com o Caramelo Bot IA"
         >
-          <i className="bi bi-chat-heart fs-3"></i>
+          <i className="bi bi-chat-heart-fill fs-3"></i>
         </button>
       )}
 
       {isOpen && (
-        <div className="card chatbot-card" data-testid="chatbot-window">
-          {/* Cabeçalho */}
-          <div className="chatbot-header d-flex justify-content-between align-items-center">
-            <div className="d-flex align-items-center gap-2">
-              <div
-                className="bg-white rounded-circle p-1 d-flex align-items-center justify-content-center"
-                style={{ width: 34, height: 34 }}
-              >
-                <i className="bi bi-robot text-dark fs-5"></i>
+        <div
+          className={`card chatbot-card ${expandido ? 'chatbot-card-expanded' : ''}`}
+          data-testid="chatbot-window"
+        >
+          {/* Cabeçalho Limpo e Elegante */}
+          <div className="chatbot-header d-flex justify-content-between align-items-center gap-2">
+            <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
+              <div className="chatbot-avatar">
+                <i className="bi bi-stars text-warning fs-5"></i>
               </div>
-              <div>
-                <h6 className="mb-0 fw-bold text-white">Caramelo Bot IA</h6>
-                <small
-                  className="d-flex align-items-center gap-1"
-                  style={{ fontSize: '0.7rem', color: '#e0f2f1' }}
-                >
+              <div style={{ minWidth: 0 }}>
+                <h6 className="chatbot-title">Caramelo Bot</h6>
+                <div className="chatbot-subtitle">
                   <span className="status-dot"></span>
-                  <span data-testid="chat-versao-modelo">
+                  <span>Consultor Virtual IA</span>
+                  <span data-testid="chat-versao-modelo" className="d-none">
                     {statusTreinamento?.versaoAtualModelo || 'ft:gpt-4o-mini:caramelo-v1'}
                   </span>
-                </small>
+                </div>
               </div>
             </div>
-            <div className="d-flex align-items-center gap-1">
+
+            <div className="d-flex align-items-center gap-1 flex-shrink-0">
               <button
                 type="button"
                 data-testid="btn-abrir-painel-treinamento"
-                className="btn btn-sm btn-warning text-dark fw-bold px-2 py-0"
-                style={{ fontSize: '0.72rem' }}
+                className="btn btn-ia-treino"
                 onClick={() => {
                   carregarStatusTreinamento();
                   setMostrarModalTreino(true);
                 }}
                 title="Ver Arquitetura da IA, Pesos Treinados e Fine-Tuning"
               >
-                <i className="bi bi-cpu me-1"></i>IA & Treino
+                <i className="bi bi-cpu-fill"></i>
+                <span>IA & Treino</span>
               </button>
               <button
                 type="button"
-                className="btn btn-sm btn-link text-white text-decoration-none p-1"
+                className="btn btn-link text-decoration-none btn-header-icon"
+                onClick={() => setExpandido(!expandido)}
+                title={expandido ? 'Tamanho padrão' : 'Expandir janela do chat'}
+              >
+                <i className={`bi ${expandido ? 'bi-arrows-angle-contract' : 'bi-arrows-angle-expand'} fs-6`}></i>
+              </button>
+              <button
+                type="button"
+                className="btn btn-link text-decoration-none btn-header-icon"
                 onClick={handleLimparChat}
                 title="Reiniciar conversa"
               >
-                <i className="bi bi-arrow-counterclockwise fs-6"></i>
+                <i className="bi bi-arrow-counterclockwise fs-5"></i>
               </button>
               <button
                 type="button"
-                className="btn btn-sm btn-link text-white text-decoration-none p-1"
+                className="btn btn-link text-decoration-none btn-header-icon"
                 onClick={() => setIsOpen(false)}
                 title="Fechar chat"
               >
@@ -373,40 +402,43 @@ const ChatbotCard: React.FC = () => {
             </div>
           </div>
 
-          {/* Barra de Perfil do Cliente e Preferências (RNF0044 Critérios 3.a, 3.e, Cenários 2 e 3) */}
-          <div className="bg-light border-bottom px-2 py-1 flex-shrink-0" style={{ fontSize: '0.76rem' }}>
-            <div className="d-flex align-items-center justify-content-between gap-1">
-              <div className="d-flex align-items-center gap-1 flex-grow-1">
-                <span className="fw-semibold text-secondary">Cliente:</span>
-                <select
-                  data-testid="chat-cliente-select"
-                  className="form-select form-select-sm py-0 px-2"
-                  style={{ fontSize: '0.75rem', height: '24px' }}
-                  value={clienteId}
-                  onChange={(e) => handleTrocarCliente(Number(e.target.value))}
-                >
-                  {clientesPerfis.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
+          {/* Barra de Perfil do Cliente Logado e Preferências (RNF0044 Critérios 3.a, 3.e, Cenários 2 e 3) */}
+          <div className="chatbot-profile-bar">
+            <div className="d-flex align-items-center justify-content-between gap-2">
+              <div className="d-flex align-items-center gap-2 flex-grow-1" style={{ minWidth: 0 }}>
+                <i className="bi bi-person-check-fill text-success fs-5 flex-shrink-0"></i>
+                <div className="text-truncate">
+                  <span className="text-muted small me-1">Cliente:</span>
+                  <strong
+                    data-testid="chat-cliente-ativo"
+                    className="text-dark"
+                    style={{ fontSize: '0.92rem' }}
+                  >
+                    {user?.perfil === 'CLIENTE'
+                      ? user.nome
+                      : clienteAtivo?.nome || 'Visitante'}
+                  </strong>
+                </div>
               </div>
               <button
                 type="button"
                 data-testid="btn-editar-preferencias"
-                className="btn btn-sm btn-outline-secondary py-0 px-2"
-                style={{ fontSize: '0.7rem' }}
+                className={`btn btn-preferencias-toggle ${mostrarPreferencias ? 'active' : ''}`}
                 onClick={() => setMostrarPreferencias(!mostrarPreferencias)}
               >
-                <i className="bi bi-sliders me-1"></i>Preferências
+                <i className="bi bi-sliders"></i>
+                <span>Preferências</span>
               </button>
             </div>
 
             {clienteAtivo && (
-              <div className="text-muted mt-1 text-truncate" title={clienteAtivo.pecasCompradas?.join(', ')}>
-                <strong>Histórico:</strong>{' '}
-                <span data-testid="chat-historico-cliente">
+              <div
+                className="chatbot-history-line text-truncate"
+                title={clienteAtivo.pecasCompradas?.join(', ')}
+              >
+                <i className="bi bi-bag-check-fill text-success flex-shrink-0"></i>
+                <strong className="flex-shrink-0">Histórico:</strong>
+                <span data-testid="chat-historico-cliente" className="text-truncate">
                   {clienteAtivo.pecasCompradas?.length
                     ? clienteAtivo.pecasCompradas.join(', ')
                     : 'Sem compras registradas'}
@@ -415,24 +447,32 @@ const ChatbotCard: React.FC = () => {
             )}
 
             {mostrarPreferencias && (
-              <div className="mt-2 p-2 bg-white rounded border">
-                <label className="form-label mb-1 fw-bold small">
-                  Preferências de Estilo Declaradas (Critério 3.e):
+              <div className="mt-2 p-3 bg-white rounded-3 border shadow-sm">
+                <label className="form-label mb-1 fw-bold text-dark" style={{ fontSize: '0.86rem' }}>
+                  Preferências de Estilo do Cliente (Critério 3.e):
                 </label>
                 <textarea
                   data-testid="input-preferencias-cliente"
-                  className="form-control form-control-sm mb-1"
+                  className="form-control mb-2"
                   rows={2}
-                  style={{ fontSize: '0.74rem' }}
+                  style={{ fontSize: '0.88rem' }}
                   value={preferenciasTexto}
                   onChange={(e) => setPreferenciasTexto(e.target.value)}
                 />
-                <div className="d-flex justify-content-end gap-1">
+                <div className="d-flex justify-content-end gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-light border"
+                    style={{ fontSize: '0.83rem' }}
+                    onClick={() => setMostrarPreferencias(false)}
+                  >
+                    Cancelar
+                  </button>
                   <button
                     type="button"
                     data-testid="btn-salvar-preferencias"
-                    className="btn btn-sm btn-success py-0 px-2"
-                    style={{ fontSize: '0.72rem' }}
+                    className="btn btn-sm btn-success fw-semibold px-3"
+                    style={{ fontSize: '0.83rem' }}
                     onClick={handleSalvarPreferencias}
                   >
                     Salvar e Recalibrar IA
@@ -444,175 +484,179 @@ const ChatbotCard: React.FC = () => {
 
           {/* Corpo do Chat */}
           <div className="card-body chatbot-body overflow-auto" data-testid="chatbot-messages">
-            {mensagens.map((msg) => (
-              <div
-                key={msg.id}
-                data-testid={msg.remetente === 'usuario' ? 'chat-msg-user' : 'chat-msg-bot'}
-                className={`d-flex flex-column ${
-                  msg.remetente === 'usuario' ? 'align-self-end' : 'align-self-start'
-                }`}
-                style={{ maxWidth: '90%' }}
-              >
+            {mensagens.map((msg, index) => {
+              const isNotice = msg.id.startsWith('notice-');
+              const isWelcome = msg.id === '1';
+              const isLast = index === mensagens.length - 1;
+
+              return (
                 <div
-                  className={msg.remetente === 'usuario' ? 'chat-bubble-user' : 'chat-bubble-bot'}
+                  key={msg.id}
+                  ref={isLast ? lastMessageRef : null}
+                  data-testid={msg.remetente === 'usuario' ? 'chat-msg-user' : 'chat-msg-bot'}
+                  className={`d-flex flex-column ${
+                    msg.remetente === 'usuario' ? 'align-self-end' : 'align-self-start'
+                  }`}
+                  style={{ maxWidth: msg.remetente === 'usuario' ? '86%' : '96%' }}
                 >
-                  {msg.explicacaoPersonalizacao && (
-                    <div
-                      data-testid="chat-explicacao-personalizacao"
-                      className="badge bg-warning-subtle text-dark border border-warning-subtle mb-2 text-wrap text-start w-100"
-                      style={{ fontSize: '0.68rem', fontWeight: 600 }}
-                    >
-                      <i className="bi bi-cpu-fill me-1"></i>
-                      {msg.explicacaoPersonalizacao}
-                    </div>
-                  )}
-
-                  {renderizarTextoFormatado(msg.texto)}
-
-                  {/* Cards de Peças Recomendadas */}
-                  {msg.itensRecomendados && msg.itensRecomendados.length > 0 && (
-                    <div className="mt-3 d-flex flex-column gap-2" data-testid="chat-recomendacoes-lista">
-                      <div className="fw-semibold text-secondary small">
-                        <i className="bi bi-stars text-warning me-1"></i>Peças Recomendadas:
+                  <div
+                    className={
+                      msg.remetente === 'usuario'
+                        ? 'chat-bubble-user'
+                        : isNotice
+                        ? 'chat-bubble-bot-notice'
+                        : 'chat-bubble-bot'
+                    }
+                  >
+                    {msg.explicacaoPersonalizacao && (
+                      <div
+                        data-testid="chat-explicacao-personalizacao"
+                        className="personalization-banner"
+                      >
+                        <i className="bi bi-cpu-fill me-1"></i>
+                        {msg.explicacaoPersonalizacao}
                       </div>
-                      {msg.itensRecomendados.map((item) => (
-                        <div
-                          key={item.id}
-                          data-testid="chat-recommended-item"
-                          className="mini-product-card d-flex p-2 gap-2 align-items-center"
-                        >
-                          <img
-                            src={
-                              item.imagemUrl ||
-                              'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80'
-                            }
-                            alt={item.nome}
-                            className="mini-product-img rounded"
-                          />
-                          <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                            <div
-                              className="fw-bold text-dark text-truncate small"
-                              data-testid="chat-recommended-item-name"
-                              title={item.nome}
-                            >
-                              {item.nome}
+                    )}
+
+                    <div>{renderizarTextoFormatado(msg.texto)}</div>
+
+                    {/* Cards de Peças Recomendadas */}
+                    {msg.itensRecomendados && msg.itensRecomendados.length > 0 && (
+                      <div
+                        className="mt-3 d-flex flex-column gap-2"
+                        data-testid="chat-recomendacoes-lista"
+                      >
+                        <div className="fw-bold text-secondary" style={{ fontSize: '0.84rem' }}>
+                          <i className="bi bi-stars text-warning me-1"></i>Peças Recomendadas para Você:
+                        </div>
+                        {msg.itensRecomendados.map((item) => (
+                          <div
+                            key={item.id}
+                            data-testid="chat-recommended-item"
+                            className="mini-product-card d-flex gap-3 align-items-center"
+                          >
+                            <img
+                              src={
+                                item.imagemUrl ||
+                                'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80'
+                              }
+                              alt={item.nome}
+                              className="mini-product-img"
+                            />
+                            <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                              <div
+                                className="mini-product-title text-truncate"
+                                data-testid="chat-recommended-item-name"
+                                title={item.nome}
+                              >
+                                {item.nome}
+                              </div>
+                              <div
+                                className="mini-product-meta"
+                                data-testid="chat-recommended-item-category"
+                              >
+                                {item.categoria} {item.tipoArgila ? `• ${item.tipoArgila}` : ''}
+                              </div>
+                              <div className="mini-product-price mt-1">
+                                {new Intl.NumberFormat('pt-BR', {
+                                  style: 'currency',
+                                  currency: 'BRL',
+                                }).format(item.valorVenda)}
+                              </div>
                             </div>
-                            <small
-                              className="text-muted d-block"
-                              data-testid="chat-recommended-item-category"
-                              style={{ fontSize: '0.75rem' }}
-                            >
-                              {item.categoria} {item.tipoArgila ? `• ${item.tipoArgila}` : ''}
-                            </small>
-                            <span className="fw-bold text-success small">
-                              {new Intl.NumberFormat('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL',
-                              }).format(item.valorVenda)}
-                            </span>
+                            <div className="flex-shrink-0">
+                              <button
+                                type="button"
+                                className="btn btn-outline-success btn-add-cart-chat"
+                                title="Adicionar ao carrinho"
+                                onClick={() => handleAddToCart(item)}
+                              >
+                                <i className="bi bi-cart-plus me-1"></i>Adicionar
+                              </button>
+                            </div>
                           </div>
-                          <div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Conteúdos Relevantes Sugeridos (RNF0044 item 2 / Cenário 6) */}
+                    {msg.conteudosSugeridos && msg.conteudosSugeridos.length > 0 && (
+                      <div
+                        data-testid="chat-conteudos-sugeridos"
+                        className="suggested-contents-box"
+                      >
+                        <div className="fw-bold text-dark mb-1">
+                          <i className="bi bi-journal-bookmark-fill text-success me-1"></i>
+                          Conteúdos e Guias Relevantes:
+                        </div>
+                        <ul className="mb-0 ps-3">
+                          {msg.conteudosSugeridos.map((c, idx) => (
+                            <li key={idx} className="text-secondary mb-1">
+                              {c}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Botões de Avaliação da Resposta pelo Usuário (RNF0044 item 3 / Critério 3.d / Cenário 7) */}
+                    {msg.remetente === 'bot' &&
+                      !isWelcome &&
+                      !isNotice &&
+                      msg.categoriaFoco !== 'Conversa' && (
+                        <div className="feedback-bar">
+                        <span className="feedback-question">Esta resposta foi útil?</span>
+                        {msg.avaliacaoUsuario ? (
+                          <span
+                            data-testid="feedback-registrado-badge"
+                            className={`badge ${
+                              msg.avaliacaoUsuario === 'UTIL' ? 'bg-success' : 'bg-danger'
+                            }`}
+                            style={{ fontSize: '0.8rem', padding: '6px 10px' }}
+                          >
+                            {msg.avaliacaoUsuario === 'UTIL'
+                              ? '👍 Útil (Incorporado ao Treino)'
+                              : '👎 Não útil (Pesos Ajustados)'}
+                          </span>
+                        ) : (
+                          <div className="d-flex gap-2">
                             <button
                               type="button"
-                              className="btn btn-sm btn-outline-success p-1 px-2"
-                              title="Adicionar ao carrinho"
-                              onClick={() => handleAddToCart(item)}
+                              data-testid="btn-feedback-util"
+                              className="btn btn-outline-success btn-feedback-choice"
+                              onClick={() => handleAvaliarResposta(msg, 'UTIL')}
                             >
-                              <i className="bi bi-cart-plus"></i>
+                              👍 Útil
+                            </button>
+                            <button
+                              type="button"
+                              data-testid="btn-feedback-nao-util"
+                              className="btn btn-outline-danger btn-feedback-choice"
+                              onClick={() => handleAvaliarResposta(msg, 'NAO_UTIL')}
+                            >
+                              👎 Não útil
                             </button>
                           </div>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-warning w-100 mt-1 fw-semibold py-1"
-                        style={{ fontSize: '0.8rem' }}
-                        onClick={() => navigate('/cart')}
-                      >
-                        <i className="bi bi-bag-check me-1"></i>Ir para o Carrinho
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Conteúdos Relevantes Sugeridos (RNF0044 item 2 / Cenário 6) */}
-                  {msg.conteudosSugeridos && msg.conteudosSugeridos.length > 0 && (
-                    <div
-                      data-testid="chat-conteudos-sugeridos"
-                      className="mt-2 p-2 rounded bg-light border border-secondary-subtle"
-                      style={{ fontSize: '0.73rem' }}
-                    >
-                      <div className="fw-bold text-dark mb-1">
-                        <i className="bi bi-journal-bookmark-fill text-primary me-1"></i>
-                        Conteúdos e Guias Relevantes Sugeridos:
+                        )}
                       </div>
-                      <ul className="mb-0 ps-3">
-                        {msg.conteudosSugeridos.map((c, idx) => (
-                          <li key={idx} className="text-secondary">
-                            {c}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Botões de Avaliação da Resposta pelo Usuário (RNF0044 item 3 / Critério 3.d / Cenário 7) */}
-                  {msg.remetente === 'bot' && msg.id !== '1' && (
-                    <div className="mt-2 pt-2 border-top d-flex align-items-center justify-content-between">
-                      <span className="text-muted" style={{ fontSize: '0.7rem' }}>
-                        Esta resposta foi útil?
-                      </span>
-                      {msg.avaliacaoUsuario ? (
-                        <span
-                          data-testid="feedback-registrado-badge"
-                          className={`badge ${
-                            msg.avaliacaoUsuario === 'UTIL' ? 'bg-success' : 'bg-danger'
-                          }`}
-                          style={{ fontSize: '0.68rem' }}
-                        >
-                          {msg.avaliacaoUsuario === 'UTIL'
-                            ? '👍 Útil (Incorporado ao Treino)'
-                            : '👎 Não útil (Pesos Ajustados)'}
-                        </span>
-                      ) : (
-                        <div className="d-flex gap-1">
-                          <button
-                            type="button"
-                            data-testid="btn-feedback-util"
-                            className="btn btn-sm btn-outline-success py-0 px-2"
-                            style={{ fontSize: '0.7rem' }}
-                            onClick={() => handleAvaliarResposta(msg, 'UTIL')}
-                          >
-                            👍 Útil
-                          </button>
-                          <button
-                            type="button"
-                            data-testid="btn-feedback-nao-util"
-                            className="btn btn-sm btn-outline-danger py-0 px-2"
-                            style={{ fontSize: '0.7rem' }}
-                            onClick={() => handleAvaliarResposta(msg, 'NAO_UTIL')}
-                          >
-                            👎 Não útil
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  <small
+                    className={`mt-1 text-muted ${
+                      msg.remetente === 'usuario' ? 'text-end' : 'text-start'
+                    }`}
+                    style={{ fontSize: '0.76rem' }}
+                  >
+                    {msg.timestamp}
+                  </small>
                 </div>
-                <small
-                  className={`mt-1 text-muted ${
-                    msg.remetente === 'usuario' ? 'text-end' : 'text-start'
-                  }`}
-                  style={{ fontSize: '0.68rem' }}
-                >
-                  {msg.timestamp}
-                </small>
-              </div>
-            ))}
+              );
+            })}
 
             {carregando && (
               <div className="align-self-start typing-indicator">
-                <span className="small text-muted me-1" style={{ fontSize: '0.78rem' }}>
-                  Caramelo Bot analisando
+                <span className="text-muted me-1" style={{ fontSize: '0.88rem' }}>
+                  Caramelo Bot consultando IA
                 </span>
                 <span className="typing-dot"></span>
                 <span className="typing-dot"></span>
@@ -623,44 +667,62 @@ const ChatbotCard: React.FC = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Sugestões Rápidas */}
-          <div className="chatbot-suggestions">
-            {SUGESTOES_PADRAO.map((sugestao, i) => (
-              <button
-                key={i}
-                type="button"
-                className="quick-topic-badge"
-                title={sugestao.prompt}
-                onClick={() => handleEnviar(sugestao.prompt)}
-              >
-                {sugestao.label}
-              </button>
-            ))}
-          </div>
+          {/* Sugestões Rápidas em Grid 2x2 (visíveis no início ou quando acionadas pelo usuário) */}
+          {mostrarSugestoes && (
+            <div className="chatbot-suggestions">
+              {SUGESTOES_PADRAO.map((sugestao, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="quick-topic-badge"
+                  title={sugestao.prompt}
+                  onClick={() => handleEnviar(sugestao.prompt)}
+                >
+                  {sugestao.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Rodapé / Input */}
-          <div className="card-footer bg-white border-0 p-2 flex-shrink-0">
-            <div className="input-group">
-              <input
-                type="text"
-                data-testid="chat-input"
-                className="form-control border-end-0"
-                placeholder="Pergunte sobre peças, busca, forno, dicas..."
-                value={mensagemInput}
-                onChange={(e) => setMensagemInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={carregando}
-                style={{ fontSize: '0.9rem' }}
-              />
+          <div className="chatbot-footer">
+            <div className="d-flex align-items-center gap-2">
               <button
-                data-testid="chat-send-btn"
-                className="btn btn-warning border-start-0 px-3"
                 type="button"
-                onClick={() => handleEnviar()}
-                disabled={carregando || !mensagemInput.trim()}
+                className={`btn ${mostrarSugestoes ? 'btn-secondary' : 'btn-outline-secondary'}`}
+                style={{
+                  borderRadius: '12px',
+                  height: '44px',
+                  padding: '0 12px',
+                  fontSize: '0.88rem',
+                  flexShrink: 0,
+                }}
+                onClick={() => setMostrarSugestoes(!mostrarSugestoes)}
+                title={mostrarSugestoes ? 'Ocultar sugestões rápidas' : 'Ver sugestões rápidas'}
               >
-                <i className="bi bi-send-fill text-dark"></i>
+                <i className="bi bi-magic"></i>
               </button>
+              <div className="input-group">
+                <input
+                  type="text"
+                  data-testid="chat-input"
+                  className="form-control chatbot-input"
+                  placeholder="Digite sua dúvida ou peça recomendações..."
+                  value={mensagemInput}
+                  onChange={(e) => setMensagemInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={carregando}
+                />
+                <button
+                  data-testid="chat-send-btn"
+                  className="btn chatbot-send-btn"
+                  type="button"
+                  onClick={() => handleEnviar()}
+                  disabled={carregando || !mensagemInput.trim()}
+                >
+                  <i className="bi bi-send-fill fs-6"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -687,7 +749,7 @@ const ChatbotCard: React.FC = () => {
                   onClick={() => setMostrarModalTreino(false)}
                 />
               </div>
-              <div className="modal-body" style={{ fontSize: '0.86rem' }}>
+              <div className="modal-body" style={{ fontSize: '0.92rem' }}>
                 <div className="alert alert-warning mb-3">
                   <div className="fw-bold mb-1">
                     1) Modelo Integrado e Justificativa da Escolha (Critério 3.b / Cenário 1):
@@ -718,7 +780,7 @@ const ChatbotCard: React.FC = () => {
                   <button
                     type="button"
                     data-testid="btn-executar-treinamento"
-                    className="btn btn-sm btn-success fw-bold"
+                    className="btn btn-sm btn-success fw-bold px-3 py-2"
                     disabled={treinandoModelo}
                     onClick={handleExecutarTreinamentoManual}
                   >
@@ -841,7 +903,7 @@ const ChatbotCard: React.FC = () => {
                 <pre
                   data-testid="jsonl-dataset-viewer"
                   className="bg-dark text-light p-2 rounded small mb-0"
-                  style={{ maxHeight: 150, overflowY: 'auto', fontSize: '0.72rem' }}
+                  style={{ maxHeight: 160, overflowY: 'auto', fontSize: '0.8rem' }}
                 >
                   {statusTreinamento.datasetFineTuningJsonl.join('\n')}
                 </pre>
@@ -849,7 +911,7 @@ const ChatbotCard: React.FC = () => {
               <div className="modal-footer">
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary"
                   onClick={() => setMostrarModalTreino(false)}
                 >
                   Fechar

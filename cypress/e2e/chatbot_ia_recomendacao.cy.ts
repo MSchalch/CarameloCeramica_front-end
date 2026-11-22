@@ -37,11 +37,19 @@ describe('Roteiro Presencial: Chatbot de Recomendação com IA Generativa (RNF00
   });
 
   it('2) Recomendação personalizada para um cliente, coerente com seu histórico de compras e preferências (RNF0044 item 1)', () => {
-    cy.visit('/');
-    cy.get('[data-testid="chatbot-toggle-btn"]').click();
+    cy.request('POST', `${apiUrl}/auth/login`, {
+      login: 'marina.silva@email.com',
+      senha: '123456',
+    }).then((loginRes) => {
+      cy.visit('/', {
+        onBeforeLoad(win) {
+          win.localStorage.setItem('caramelo_user', JSON.stringify(loginRes.body));
+        },
+      });
+    });
 
-    // Seleciona Marina Lima Silva pelo nome visível no seletor
-    cy.get('[data-testid="chat-cliente-select"]').select('Marina Lima Silva');
+    cy.get('[data-testid="chatbot-toggle-btn"]').click();
+    cy.get('[data-testid="chat-cliente-ativo"]').should('contain.text', 'Marina Lima Silva');
     cy.get('[data-testid="chat-historico-cliente"]').should('contain.text', 'Bowl');
 
     cy.get('[data-testid="chat-input"]').type('Me dê uma recomendação personalizada para minha coleção');
@@ -88,10 +96,20 @@ describe('Roteiro Presencial: Chatbot de Recomendação com IA Generativa (RNF00
       });
     });
 
-    // Demonstra também na interface trocando para Lucas Mendes Oliveira
-    cy.visit('/');
+    // Demonstra também na interface logado como Lucas Mendes Oliveira
+    cy.request('POST', `${apiUrl}/auth/login`, {
+      login: 'lucas.mendes@email.com',
+      senha: '123456',
+    }).then((loginRes) => {
+      cy.visit('/', {
+        onBeforeLoad(win) {
+          win.localStorage.setItem('caramelo_user', JSON.stringify(loginRes.body));
+        },
+      });
+    });
+
     cy.get('[data-testid="chatbot-toggle-btn"]').click();
-    cy.get('[data-testid="chat-cliente-select"]').select('Lucas Mendes Oliveira');
+    cy.get('[data-testid="chat-cliente-ativo"]').should('contain.text', 'Lucas Mendes Oliveira');
     cy.get('[data-testid="chat-historico-cliente"]').should('contain.text', 'Vaso Ânfora Escultural');
 
     cy.get('[data-testid="chat-input"]').type(perguntaComum);

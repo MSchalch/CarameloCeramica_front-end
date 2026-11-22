@@ -17,8 +17,8 @@ const AdminProducts = () => {
 
   // Modal de Entrada em Estoque (RF0051, RN0050, RN0051, RN0061, RN0062, RN0064)
   const [pecaEntradaEstoque, setPecaEntradaEstoque] = useState<Peca | null>(null);
-  const [qtdEntrada, setQtdEntrada] = useState<number>(5);
-  const [custoEntrada, setCustoEntrada] = useState<number>(30);
+  const [qtdEntrada, setQtdEntrada] = useState<number | ''>(5);
+  const [custoEntrada, setCustoEntrada] = useState<number | ''>(30);
   const [fornecedorEntrada, setFornecedorEntrada] = useState<string>('Ateliê Cerâmica Caramelo');
   const [dataEntrada, setDataEntrada] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [salvandoEntrada, setSalvandoEntrada] = useState(false);
@@ -100,8 +100,8 @@ const AdminProducts = () => {
     setSalvandoEntrada(true);
     try {
       await productService.registrarEntradaEstoque(pecaEntradaEstoque.id, {
-        quantidadeEntrada: qtdEntrada,
-        custo: custoEntrada,
+        quantidadeEntrada: Number(qtdEntrada || 0),
+        custo: Number(custoEntrada || 0),
         fornecedorEntrada,
         dataEntrada,
       });
@@ -201,7 +201,7 @@ const AdminProducts = () => {
 
           {error && <div className="alert alert-danger mb-4">{error}</div>}
 
-          {loading ? (
+          {loading && products.length === 0 ? (
             <div className="text-center py-5">
               <div className="spinner-border text-warning" role="status"></div>
               <p className="text-muted mt-2">Carregando peças de cerâmica...</p>
@@ -360,7 +360,9 @@ const AdminProducts = () => {
                         min={1}
                         className="form-control input-qtd-entrada"
                         value={qtdEntrada}
-                        onChange={(e) => setQtdEntrada(Number(e.target.value))}
+                        onChange={(e) =>
+                          setQtdEntrada(e.target.value === '' ? '' : Number(e.target.value))
+                        }
                         required
                       />
                     </div>
@@ -372,7 +374,9 @@ const AdminProducts = () => {
                         min={0.01}
                         className="form-control input-custo-entrada"
                         value={custoEntrada}
-                        onChange={(e) => setCustoEntrada(Number(e.target.value))}
+                        onChange={(e) =>
+                          setCustoEntrada(e.target.value === '' ? '' : Number(e.target.value))
+                        }
                         required
                       />
                     </div>

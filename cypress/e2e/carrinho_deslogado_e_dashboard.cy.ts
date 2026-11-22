@@ -80,11 +80,10 @@ describe('Fluxo de Usuário Deslogado no Carrinho e Validação do Dashboard', (
     // 2.3 Valida os cabeçalhos e títulos
     cy.contains('Painel Analítico de Vendas').should('be.visible');
 
-    // 2.4 Valida que as métricas principais (KPIs) carregaram com valores reais
-    cy.contains('Vendas Totais').should('be.visible');
-    cy.contains('Pedidos Realizados').should('be.visible');
-    cy.contains('Novos Clientes').should('be.visible');
-    cy.contains('Trocas Solicitadas').should('be.visible');
+    // 2.4 Valida que os cards de totais por categoria e o total do período carregaram com valores reais
+    cy.get('.card-total-categoria').should('have.length.greaterThan', 0);
+    cy.get('.card-total-geral-periodo').should('be.visible');
+    cy.contains('Total no Período').should('be.visible');
 
     // 2.5 Valida a presença dos filtros de período e categorias
     cy.get('input[type="date"]').should('have.length', 2);

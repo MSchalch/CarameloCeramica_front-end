@@ -1,12 +1,22 @@
 export interface CartItem {
   id: number;
+  sku?: string;
   nome: string;
+  artesaoMarca?: string;
   preco: number;
   imagemUrl: string;
   categoria: string;
+  categoriasAdicionais?: string[];
   quantidade: number;
   estoque: number;
   peso?: number;
+  altura?: number;
+  diametro?: number;
+  volume?: number;
+  tipoArgila?: string;
+  tipoEsmalte?: string;
+  vaiAoForno?: boolean;
+  vaiAoMicroondas?: boolean;
 }
 
 const GUEST_CART_KEY = 'caramelo_cart_guest';

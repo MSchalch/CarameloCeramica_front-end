@@ -80,18 +80,18 @@ const ProductForm = ({ initialData, onSubmit, isEdit = false, loading = false }:
     setFormData(prev => {
       const updated = {
         ...prev,
-        [name]: type === 'number' ? (value === '' ? 0 : Number(value)) : value,
+        [name]: type === 'number' ? (value === '' ? ('' as any) : Number(value)) : value,
       };
 
       if (name === 'grupoPrecificacao') {
         const novaMargem = calcularMargemPorGrupo(value);
         updated.margemLucro = novaMargem;
-        const custoAtual = updated.custo || 0;
+        const custoAtual = Number(updated.custo || 0);
         updated.valorVenda = Number((custoAtual * (1 + novaMargem / 100)).toFixed(2));
       } else if (name === 'custo') {
         const custoNum = Number(value) || 0;
         const margem = updated.margemLucro || 30;
-        updated.valorVenda = Number((custoNum * (1 + margem / 100)).toFixed(2));
+        updated.valorVenda = value === '' ? ('' as any) : Number((custoNum * (1 + margem / 100)).toFixed(2));
       }
 
       return updated;
@@ -100,7 +100,16 @@ const ProductForm = ({ initialData, onSubmit, isEdit = false, loading = false }:
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      altura: Number(formData.altura || 0),
+      diametro: Number(formData.diametro || 0),
+      peso: Number(formData.peso || 0),
+      volume: Number(formData.volume || 0),
+      custo: Number(formData.custo || 0),
+      valorVenda: Number(formData.valorVenda || 0),
+      estoque: Number(formData.estoque || 0),
+    });
   };
 
   return (
@@ -385,7 +394,7 @@ const ProductForm = ({ initialData, onSubmit, isEdit = false, loading = false }:
             type="number"
             className="form-control"
             name="estoque"
-            value={formData.estoque ?? 0}
+            value={formData.estoque === ('' as any) ? '' : (formData.estoque ?? '')}
             onChange={handleChange}
             required
           />
