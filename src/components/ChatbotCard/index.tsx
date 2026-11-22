@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { chatService } from '../../services/chatService';
 import { cartService } from '../../services/cartService';
+import { productService } from '../../services/productService';
+import type { Peca } from '../../types/product';
 import type {
   ChatMensagem,
   PecaRecomendada,
@@ -52,6 +54,8 @@ const ChatbotCard: React.FC = () => {
   const [mostrarModalTreino, setMostrarModalTreino] = useState(false);
   const [statusTreinamento, setStatusTreinamento] = useState<StatusTreinamentoIA | null>(null);
   const [treinandoModelo, setTreinandoModelo] = useState(false);
+  const [pecaDetalhes, setPecaDetalhes] = useState<Peca | null>(null);
+  const [carregandoDetalhes, setCarregandoDetalhes] = useState(false);
 
   const [mensagens, setMensagens] = useState<ChatMensagem[]>([MENSAGEM_BOAS_VINDAS]);
 
@@ -264,8 +268,45 @@ const ChatbotCard: React.FC = () => {
     }
   };
 
-  const handleAddToCart = (peca: PecaRecomendada) => {
+  const handleAbrirDetalhes = async (peca: PecaRecomendada) => {
+    setPecaDetalhes({
+      id: peca.id,
+      nome: peca.nome,
+      categoria: peca.categoria,
+      valorVenda: peca.valorVenda,
+      imagemUrl: peca.imagemUrl,
+      tipoArgila: peca.tipoArgila || '',
+      tipoEsmalte: peca.tipoEsmalte || '',
+      estoque: peca.estoque ?? 10,
+      artesaoMarca: '',
+      altura: 0,
+      diametro: 0,
+      peso: 0,
+      volume: 0,
+      vaiAoForno: true,
+      vaiAoMicroondas: true,
+      grupoPrecificacao: '',
+      custo: 0,
+      margemLucro: 0,
+      ativo: true,
+    });
+    setCarregandoDetalhes(true);
+    try {
+      const completa = await productService.buscarPorId(peca.id);
+      if (completa) {
+        setPecaDetalhes(completa);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar ficha técnica da peça no chat:', err);
+    } finally {
+      setCarregandoDetalhes(false);
+    }
+  };
+
+  const handleAddToCart = (peca: PecaRecomendada | Peca) => {
+    if (!peca.id) return;
     const cart = [...cartService.getCart()];
+    const pecaCompleta = peca as Partial<Peca>;
 
     const existingIndex = cart.findIndex((i: any) => i.id === peca.id);
     if (existingIndex >= 0) {
@@ -273,16 +314,25 @@ const ChatbotCard: React.FC = () => {
     } else {
       cart.push({
         id: peca.id,
+        sku: pecaCompleta.sku,
         nome: peca.nome,
-        preco: peca.valorVenda,
+        artesaoMarca: pecaCompleta.artesaoMarca,
+        preco: Number(peca.valorVenda || 0),
         imagemUrl:
           peca.imagemUrl ||
           'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80',
         categoria: peca.categoria,
+        categoriasAdicionais: pecaCompleta.categoriasAdicionais,
         quantidade: 1,
         estoque: peca.estoque ?? 10,
+        peso: pecaCompleta.peso || 500,
+        altura: pecaCompleta.altura,
+        diametro: pecaCompleta.diametro,
+        volume: pecaCompleta.volume,
         tipoArgila: peca.tipoArgila,
         tipoEsmalte: peca.tipoEsmalte,
+        vaiAoForno: pecaCompleta.vaiAoForno,
+        vaiAoMicroondas: pecaCompleta.vaiAoMicroondas,
       });
     }
 
@@ -535,19 +585,31 @@ const ChatbotCard: React.FC = () => {
                             data-testid="chat-recommended-item"
                             className="mini-product-card d-flex gap-3 align-items-center"
                           >
-                            <img
-                              src={
-                                item.imagemUrl ||
-                                'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80'
-                              }
-                              alt={item.nome}
-                              className="mini-product-img"
-                            />
+                            <div
+                              className="mini-product-img-wrapper"
+                              onClick={() => handleAbrirDetalhes(item)}
+                              title="Clique para ver detalhes e ficha técnica da peça"
+                              data-testid="chat-recommended-item-img-trigger"
+                            >
+                              <img
+                                src={
+                                  item.imagemUrl ||
+                                  'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80'
+                                }
+                                alt={item.nome}
+                                className="mini-product-img"
+                              />
+                              <span className="mini-product-img-badge">
+                                <i className="bi bi-eye-fill"></i>
+                              </span>
+                            </div>
                             <div className="flex-grow-1" style={{ minWidth: 0 }}>
                               <div
                                 className="mini-product-title text-truncate"
                                 data-testid="chat-recommended-item-name"
-                                title={item.nome}
+                                title={`${item.nome} — clique para ver detalhes`}
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => handleAbrirDetalhes(item)}
                               >
                                 {item.nome}
                               </div>
@@ -916,6 +978,191 @@ const ChatbotCard: React.FC = () => {
                 >
                   Fechar
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalhes e Ficha Técnica da Peça Recomendada no Chat */}
+      {pecaDetalhes && (
+        <div
+          className="modal fade show d-block"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1080 }}
+          onClick={() => setPecaDetalhes(null)}
+          data-testid="chat-product-details-modal"
+        >
+          <div
+            className="modal-dialog modal-lg modal-dialog-centered"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+              <div className="modal-header bg-dark text-white border-0">
+                <div>
+                  <h5 className="modal-title fw-bold mb-0">{pecaDetalhes.nome}</h5>
+                  {(pecaDetalhes.artesaoMarca || pecaDetalhes.sku) && (
+                    <small className="text-white-50">
+                      {pecaDetalhes.artesaoMarca ? (
+                        <>
+                          Artesão / Ateliê: <strong>{pecaDetalhes.artesaoMarca}</strong>
+                        </>
+                      ) : null}
+                      {pecaDetalhes.artesaoMarca && pecaDetalhes.sku ? ' • ' : ''}
+                      {pecaDetalhes.sku ? `SKU: ${pecaDetalhes.sku}` : ''}
+                    </small>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setPecaDetalhes(null)}
+                  aria-label="Fechar"
+                />
+              </div>
+
+              <div className="modal-body p-4">
+                <div className="row g-4 align-items-center">
+                  <div className="col-md-5">
+                    <img
+                      src={
+                        pecaDetalhes.imagemUrl ||
+                        'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=500&q=80'
+                      }
+                      alt={pecaDetalhes.nome}
+                      className="img-fluid rounded-3 shadow-sm w-100"
+                      style={{ maxHeight: '320px', objectFit: 'cover' }}
+                    />
+                  </div>
+
+                  <div className="col-md-7">
+                    <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
+                      <span className="badge bg-secondary">{pecaDetalhes.categoria}</span>
+                      {pecaDetalhes.categoriasAdicionais &&
+                        pecaDetalhes.categoriasAdicionais
+                          .filter((c) => c !== pecaDetalhes.categoria)
+                          .map((cat, i) => (
+                            <span key={i} className="badge bg-light text-dark border">
+                              {cat}
+                            </span>
+                          ))}
+                      {(pecaDetalhes.estoque ?? 0) <= 0 ? (
+                        <span className="badge bg-danger">Esgotado</span>
+                      ) : (
+                        <span className="badge bg-success-subtle text-success border border-success-subtle">
+                          {pecaDetalhes.estoque} unidades em estoque
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="fw-bold text-success mb-3">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(Number(pecaDetalhes.valorVenda || 0))}
+                    </h3>
+
+                    <h6 className="fw-bold text-dark border-bottom pb-2 mb-3 d-flex align-items-center justify-content-between">
+                      <span>
+                        <i className="bi bi-sliders me-2 text-warning"></i>
+                        Ficha Técnica Artesanal
+                      </span>
+                      {carregandoDetalhes && (
+                        <span className="spinner-border spinner-border-sm text-secondary" role="status" />
+                      )}
+                    </h6>
+
+                    <div className="row g-2 mb-3" style={{ fontSize: '0.92rem' }}>
+                      <div className="col-6">
+                        <div className="p-2 rounded bg-light border">
+                          <small className="text-muted d-block">Tipo de Argila</small>
+                          <strong>{pecaDetalhes.tipoArgila || 'Cerâmica Artesanal'}</strong>
+                        </div>
+                      </div>
+                      <div className="col-6">
+                        <div className="p-2 rounded bg-light border">
+                          <small className="text-muted d-block">Acabamento / Esmalte</small>
+                          <strong>{pecaDetalhes.tipoEsmalte || 'Esmalte Mineral'}</strong>
+                        </div>
+                      </div>
+                      <div className="col-6">
+                        <div className="p-2 rounded bg-light border">
+                          <small className="text-muted d-block">Dimensões (Alt. × Diâm.)</small>
+                          <strong>
+                            {pecaDetalhes.altura ? `${pecaDetalhes.altura} cm` : '-'} ×{' '}
+                            {pecaDetalhes.diametro ? `${pecaDetalhes.diametro} cm` : '-'}
+                          </strong>
+                        </div>
+                      </div>
+                      <div className="col-6">
+                        <div className="p-2 rounded bg-light border">
+                          <small className="text-muted d-block">Peso / Capacidade</small>
+                          <strong>
+                            {pecaDetalhes.peso ? `${pecaDetalhes.peso} g` : '-'}
+                            {pecaDetalhes.volume && pecaDetalhes.volume > 0
+                              ? ` • ${pecaDetalhes.volume} ml`
+                              : ''}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="d-flex flex-wrap gap-2 mb-4">
+                      <span
+                        className={`badge px-3 py-2 ${
+                          pecaDetalhes.vaiAoForno
+                            ? 'bg-success-subtle text-success border border-success-subtle'
+                            : 'bg-secondary-subtle text-secondary border'
+                        }`}
+                      >
+                        <i
+                          className={`bi ${
+                            pecaDetalhes.vaiAoForno ? 'bi-check-circle-fill' : 'bi-x-circle'
+                          } me-1`}
+                        ></i>
+                        Forno: {pecaDetalhes.vaiAoForno ? 'Sim (até 1240°C)' : 'Não indicado'}
+                      </span>
+
+                      <span
+                        className={`badge px-3 py-2 ${
+                          pecaDetalhes.vaiAoMicroondas
+                            ? 'bg-success-subtle text-success border border-success-subtle'
+                            : 'bg-secondary-subtle text-secondary border'
+                        }`}
+                      >
+                        <i
+                          className={`bi ${
+                            pecaDetalhes.vaiAoMicroondas ? 'bi-check-circle-fill' : 'bi-x-circle'
+                          } me-1`}
+                        ></i>
+                        Micro-ondas: {pecaDetalhes.vaiAoMicroondas ? 'Sim' : 'Não indicado'}
+                      </span>
+                    </div>
+
+                    <div className="d-flex align-items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleAddToCart(pecaDetalhes);
+                          setPecaDetalhes(null);
+                        }}
+                        disabled={(pecaDetalhes.estoque ?? 0) <= 0}
+                        className="btn btn-warning fw-bold px-4 py-2 flex-grow-1 shadow-sm"
+                      >
+                        <i className="bi bi-cart-plus me-2"></i>
+                        {(pecaDetalhes.estoque ?? 0) <= 0
+                          ? 'Produto Indisponível'
+                          : 'Adicionar ao Carrinho'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary px-3 py-2"
+                        onClick={() => setPecaDetalhes(null)}
+                      >
+                        Fechar
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
