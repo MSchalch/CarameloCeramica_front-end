@@ -412,6 +412,7 @@ const ChatbotCard: React.FC = () => {
             </div>
 
             <div className="d-flex align-items-center gap-1 flex-shrink-0">
+              {/* Descomente o botão abaixo caso queira exibir novamente o painel de IA & Treino
               <button
                 type="button"
                 data-testid="btn-abrir-painel-treinamento"
@@ -425,6 +426,7 @@ const ChatbotCard: React.FC = () => {
                 <i className="bi bi-cpu-fill"></i>
                 <span>IA & Treino</span>
               </button>
+              */}
               <button
                 type="button"
                 className="btn btn-link text-decoration-none btn-header-icon"
